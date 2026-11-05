@@ -1,0 +1,20 @@
+.mq{
+  --bg:var(--petal);
+  position:relative;
+  color:var(--wine);
+  overflow:hidden;
+  padding:20px 0
+}
+.mq div{
+  display:flex;
+  gap:40px;
+  width:max-content;
+  font-size:clamp(2.6rem,6vw,5rem);
+  white-space:nowrap;
+  animation:m 26s linear infinite;
+  position:relative;
+  z-index:2
+}
+@keyframes m{to{transform:translateX(-50%)}}
+
+@media(prefers-reduced-motion:reduce){.mq div{animation:none}}

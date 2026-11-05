@@ -1,0 +1,38 @@
+#story{--bg:var(--blush)}
+#title{will-change:transform}
+.stick{
+  position:relative;
+  z-index:2;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding-top:78px;
+  overflow:hidden
+}
+#title{
+  position:relative;
+  flex:1;
+  min-height:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--wine);
+  user-select:none
+}
+.car{
+  width:100%;
+  padding-bottom:12px;
+  display:flex;
+  gap:12px;
+  overflow:hidden
+}
+.car:hover .trk{animation-play-state:paused}
+.trk{
+  display:flex;
+  gap:12px;
+  width:max-content;
+  animation:car 40s linear infinite
+}
+@keyframes car{to{transform:translateX(-50%)}}
+
+@media(prefers-reduced-motion:reduce){.car{overflow-x:auto}.trk{animation:none}}

@@ -1,0 +1,53 @@
+.card{
+  position:relative;
+  min-height:14rem !important;
+  border-radius:24px;
+  padding:20px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  overflow:hidden;
+  transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s cubic-bezier(.2,.8,.2,1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0);
+  z-index:2
+}
+.card:hover{
+  transform:translateY(-8px) rotate(-1deg);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.08);
+}
+.card .l{position:absolute;right:-15px;top:-20px;font-size:10rem !important;opacity:.15;transition:transform .7s}
+.card:hover .l{transform:scale(1.08) rotate(6deg)}
+.card h3{font-size:clamp(1.5rem,3vw,2.2rem) !important;position:relative}
+.row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;position:relative;font-size:1.2rem}
+.row b{display:block;font-family:'Jost',sans-serif;font-weight:600;font-size:1.4rem;margin-top:6px}
+
+.card button.galleta-btn {
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 52px !important;
+  height: 52px !important;
+  min-width: 52px !important;
+  min-height: 52px !important;
+  border-radius: 50% !important;
+  border: none !important;
+  cursor: pointer !important;
+  transition: transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s ease !important;
+  line-height: 0 !important;
+}
+
+.card button.galleta-btn:hover {
+  transform: scale(1.14) !important;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.3) !important;
+}
+
+.card button.galleta-btn svg {
+  display: block !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  flex-shrink: 0 !important;
+}

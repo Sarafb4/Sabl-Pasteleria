@@ -1,0 +1,172 @@
+.menu-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 10px 30px rgba(123, 26, 16, 0.06);
+  border: 1px solid rgba(123, 26, 16, 0.08);
+  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.menu-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px rgba(123, 26, 16, 0.12);
+}
+
+.menu-card-badge {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: var(--petal, #FCE4E8);
+  color: var(--wine, #7B1A10);
+  padding: 5px 14px;
+  border-radius: 99px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.menu-card-image-wrap {
+  width: 100%;
+  height: 220px;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 20px;
+  background: var(--petal, #FCE4E8);
+  position: relative;
+}
+
+.menu-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: block;
+}
+
+.menu-card:hover .menu-card-image {
+  transform: scale(1.05);
+}
+
+.menu-card-header h3 {
+  font-family: 'Jost', sans-serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: var(--wine, #7B1A10);
+  margin: 0 0 8px 0;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.menu-card-desc {
+  color: #665;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  margin: 0 0 24px 0;
+}
+
+.menu-presentations-title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 600;
+  color: var(--wine2, #440E09);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-presentations-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.presentation-pill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(123, 26, 16, 0.15);
+  background: #faf7f8;
+  color: var(--wine2, #440E09);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.presentation-pill:hover {
+  border-color: var(--wine, #7B1A10);
+  background: #fff;
+}
+
+.presentation-pill.selected {
+  background: var(--wine, #7B1A10);
+  color: var(--blush, #FFF0F3);
+  border-color: var(--wine, #7B1A10);
+  box-shadow: 0 4px 12px rgba(123, 26, 16, 0.25);
+}
+
+.pill-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pill-label {
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+.pill-portions {
+  font-size: 0.85rem;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+
+.pill-price {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.menu-card-action {
+  margin-top: auto;
+  padding-top: 10px;
+}
+
+.btn-add-cart {
+  width: 100%;
+  background: var(--wine, #7B1A10);
+  color: var(--blush, #FFF0F3);
+  border: none;
+  padding: 16px 20px;
+  border-radius: 99px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 6px 18px rgba(123, 26, 16, 0.2);
+}
+
+.btn-add-cart:hover {
+  transform: scale(1.03);
+  background: var(--wine2, #440E09);
+}
+
+.btn-add-cart:active {
+  transform: scale(0.97);
+}
+
