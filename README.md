@@ -166,4 +166,5 @@ El diseño de Sablée se basa en tonos cálidos y de repostería definidos en [g
 - [ ] Optimización de assets y despliegue en producción (Vercel o Netlify).
 
 #   s a b l e e p a s t e l e r i a  
+ #   s a b l e e p a s t e l e r i a  
  
