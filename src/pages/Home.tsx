@@ -9,36 +9,33 @@ import CallToAction from '../components/CallToAction';
 import { Cake, Dessert, Cookie } from 'lucide-react';
 
 const PRODUCTS = [
-  { 
-    name: "Tortas", 
-    desc: "Amapola, Arándanos, Zanahoria y Chocolate. Desde 1/4 libra hasta 1 libra.", 
-    isCategory: true, 
-    price: 50000, 
-    bg: "var(--wine)", 
-    color: "var(--blush)", 
-    label: "Tortas.", 
+  {
+    name: "Tortas",
+    isCategory: true,
+    price: 50000,
+    bg: "var(--wine)",
+    color: "var(--blush)",
+    label: "Tortas.",
     href: "/tortas",
     icon: <Cake size={24} strokeWidth={2.4} color="#7B1A10" />
   },
-  { 
-    name: "Galletas", 
-    desc: "Nutella, Red velvet y Oreo. Individuales ($8.000), combo 3x ($22.000) o caja 6x ($45.000).", 
-    isCategory: true, 
-    price: 8000, 
-    bg: "var(--petal)", 
-    color: "var(--wine)", 
-    label: "Galletas.", 
+  {
+    name: "Galletas",
+    isCategory: true,
+    price: 8000,
+    bg: "var(--petal)",
+    color: "var(--wine)",
+    label: "Galletas.",
     href: "/galletas",
     icon: <Cookie size={24} strokeWidth={2.4} color="#FFF0F3" />
   },
-  { 
-    name: "Postres", 
-    desc: "Genovesa tradicional tres leches y Flan de caramelo artesanal.", 
-    isCategory: true, 
-    price: 55000, 
-    bg: "var(--wine2)", 
-    color: "var(--blush)", 
-    label: "Postres.", 
+  {
+    name: "Postres",
+    isCategory: true,
+    price: 55000,
+    bg: "var(--wine2)",
+    color: "var(--blush)",
+    label: "Postres.",
     href: "/postres",
     icon: <Dessert size={24} strokeWidth={2.4} color="#7B1A10" />
   }

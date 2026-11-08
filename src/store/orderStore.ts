@@ -18,7 +18,7 @@ export interface CustomerInfo {
   notes?: string;
 }
 
-export type OrderStatus = 'Pendiente de pago' | 'Confirmado' | 'En preparación' | 'En camino' | 'Entregado';
+export type OrderStatus = 'Pendiente por validación' | 'Confirmado' | 'En preparación' | 'En camino' | 'Entregado' | 'Pago no validado';
 
 export interface Order {
   id: string;
@@ -87,8 +87,15 @@ export const triggerSystemNotification = (title: string, body: string, url: stri
   }
 };
 
+export interface DaySchedule {
+  day: string;
+  isOpen: boolean;
+  hours: string;
+}
+
 export interface BakerySchedule {
   isOpen: boolean;
+  days: DaySchedule[];
   weekdays: string;
   saturdays: string;
   sundays: string;
@@ -127,8 +134,20 @@ const EMAIL_CONFIG_KEY = 'sablee_email_config_v1';
 const DEFAULT_PHONE = '573125473848';
 const DEFAULT_PASSWORD = 'sablee';
 
+export const DEFAULT_DAYS: DaySchedule[] = [
+  { day: 'Lunes', isOpen: true, hours: '8:00 AM - 7:00 PM' },
+  { day: 'Martes', isOpen: true, hours: '8:00 AM - 7:00 PM' },
+  { day: 'Miércoles', isOpen: true, hours: '8:00 AM - 7:00 PM' },
+  { day: 'Jueves', isOpen: true, hours: '8:00 AM - 7:00 PM' },
+  { day: 'Viernes', isOpen: true, hours: '8:00 AM - 7:00 PM' },
+  { day: 'Sábado', isOpen: true, hours: '8:30 AM - 6:00 PM' },
+  { day: 'Domingo', isOpen: true, hours: '9:00 AM - 2:00 PM' },
+  { day: 'Festivos', isOpen: false, hours: 'Cerrado' }
+];
+
 const DEFAULT_SCHEDULE: BakerySchedule = {
   isOpen: true,
+  days: DEFAULT_DAYS,
   weekdays: 'Lunes a Viernes: 8:00 AM - 7:00 PM',
   saturdays: 'Sábados: 8:30 AM - 6:00 PM',
   sundays: 'Domingos y Festivos: 9:00 AM - 2:00 PM',
@@ -176,7 +195,7 @@ const INITIAL_ORDERS: Order[] = [
     subtotal: 55000,
     tax: 0,
     total: 55000,
-    status: 'Pendiente de pago',
+    status: 'Pendiente por validación',
     channel: 'WhatsApp'
   },
   {
@@ -202,9 +221,12 @@ const INITIAL_ORDERS: Order[] = [
 ];
 
 export const useOrderStore = create<OrderStore>((set, get) => {
-  // Cargar órdenes previas o usar iniciales
+  // Cargar órdenes previas o usar iniciales (migrando cualquier estado anterior a 'Pendiente por validación')
   const savedOrders = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-  const initialOrders: Order[] = savedOrders ? JSON.parse(savedOrders) : INITIAL_ORDERS;
+  const rawOrders: Order[] = savedOrders ? JSON.parse(savedOrders) : INITIAL_ORDERS;
+  const initialOrders: Order[] = rawOrders.map(o => 
+    (o.status as string) === 'Pendiente de pago' ? { ...o, status: 'Pendiente por validación' as OrderStatus } : o
+  );
   // Validación segura de sesión con expiración automática
   const checkInitialAuth = (): boolean => {
     if (typeof window === 'undefined') return false;
@@ -233,7 +255,14 @@ export const useOrderStore = create<OrderStore>((set, get) => {
     if (typeof window === 'undefined') return DEFAULT_SCHEDULE;
     try {
       const saved = localStorage.getItem(SCHEDULE_KEY);
-      if (saved) return { ...DEFAULT_SCHEDULE, ...JSON.parse(saved) };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { 
+          ...DEFAULT_SCHEDULE, 
+          ...parsed,
+          days: Array.isArray(parsed.days) && parsed.days.length > 0 ? parsed.days : DEFAULT_DAYS
+        };
+      }
     } catch {
       // fallback
     }
@@ -367,6 +396,18 @@ export const useOrderStore = create<OrderStore>((set, get) => {
       saveOrders(updated);
       set({ orders: updated });
 
+      // Guardar ID en localStorage del dispositivo para seguimiento en tiempo real
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('sablee_user_orders');
+          const list: string[] = raw ? JSON.parse(raw) : [];
+          if (!list.includes(newId)) {
+            list.unshift(newId);
+            localStorage.setItem('sablee_user_orders', JSON.stringify(list));
+          }
+        } catch {}
+      }
+
       // Notificación automática (Sonido + Web Push para la dueña)
       playOrderChime();
       triggerSystemNotification(
@@ -390,15 +431,15 @@ export const useOrderStore = create<OrderStore>((set, get) => {
     },
 
     attachReceipt: (id, receiptBase64) => {
-      const updated = get().orders.map(o => o.id === id ? { ...o, receiptUrl: receiptBase64, status: 'Confirmado' as OrderStatus } : o);
+      const updated = get().orders.map(o => o.id === id ? { ...o, receiptUrl: receiptBase64, status: 'Pendiente por validación' as OrderStatus } : o);
       saveOrders(updated);
       set({ orders: updated });
 
-      // Notificación automática de pago confirmado
+      // Notificación automática de comprobante recibido para validar
       playOrderChime();
       triggerSystemNotification(
-        `¡Comprobante recibido #${id}!`,
-        `El cliente subió su comprobante de pago exitosamente.`,
+        `¡Nuevo comprobante #${id}!`,
+        `El cliente subió su comprobante de pago. Pendiente por validación.`,
         `/admin`
       );
     },

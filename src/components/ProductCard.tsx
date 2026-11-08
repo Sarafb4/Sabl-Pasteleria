@@ -52,17 +52,39 @@ const ProductCard: React.FC<ProductProps> = ({ name, desc, price = 10, bg, color
       background: img ? `linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 100%), url(${img}) center/cover no-repeat` : bg,
       color: img ? '#fff' : color
     }}>
-      <Link to={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block', height: '100%' }}>
+      <Link 
+        to={href} 
+        style={{ 
+          textDecoration: 'none', 
+          color: 'inherit', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'space-between', 
+          height: '100%',
+          width: '100%' 
+        }}
+      >
         <span className="l d" style={{ color: img ? '#ffffff30' : undefined }}>
           {isCategory ? categoryInitial : (label ? label[0] : '')}
         </span>
         <h3 className="d">{name}</h3>
-        <div className="row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <p style={{ maxWidth: '16rem', margin: 0, paddingBottom: '8px' }}>
-            {desc}
-            <br />
+        <div className="row">
+          <p style={{ margin: 0 }}>
+            {desc && <span style={{ display: 'block', marginBottom: '6px' }}>{desc}</span>}
             {!isCategory && <strong>{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 }).format(price)}</strong>}
-            {isCategory && <strong>Ver opciones</strong>}
+            {isCategory && (
+              <span style={{ 
+                fontSize: '1rem', 
+                fontWeight: 600, 
+                letterSpacing: '0.02em', 
+                opacity: 0.95,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}>
+                Ver opciones
+              </span>
+            )}
           </p>
           <button
             type="button"

@@ -10,11 +10,17 @@ import toast from 'react-hot-toast';
 const PaymentPage: React.FC = () => {
   const { items, getTotalPrice, clearCart } = useCartStore();
   const attachReceipt = useOrderStore(state => state.attachReceipt);
+  const orders = useOrderStore(state => state.orders);
   const allPaymentMethods = usePaymentStore(state => state.methods);
   const paymentMethods = allPaymentMethods.filter(m => m.enabled);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const orderId = searchParams.get('id') || 'SAB-1024';
+  const orderId = searchParams.get('id') || searchParams.get('orderId') || '';
+  
+  // Buscar si la orden ya existe en el sistema (por si viene de OrderStatus a actualizar comprobante)
+  const existingOrder = orders.find(o => o.id === orderId);
+  const activeOrderId = orderId || existingOrder?.id || 'SAB-1024';
+
   const [file, setFile] = useState<File | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -24,7 +30,7 @@ const PaymentPage: React.FC = () => {
   );
 
   const selectedMethod = paymentMethods.find(m => m.id === selectedMethodId) || paymentMethods[0];
-  const total = getTotalPrice();
+  const total = existingOrder ? existingOrder.total : getTotalPrice();
 
   const handleCopyNumber = (num: string) => {
     navigator.clipboard.writeText(num);
@@ -49,10 +55,10 @@ const PaymentPage: React.FC = () => {
     reader.onload = () => {
       try {
         const base64 = reader.result as string;
-        attachReceipt(orderId, base64);
-        toast.success('¡Pago y comprobante recibidos con éxito! La orden está en proceso.');
+        attachReceipt(activeOrderId, base64);
+        toast.success('¡Comprobante recibido con éxito! Tu pedido está pendiente por validación.');
         clearCart();
-        navigate(`/order-status?id=${orderId}`);
+        navigate(`/order-status?id=${activeOrderId}`);
       } catch (err) {
         console.error('[Error al guardar comprobante]:', err);
         toast.error('No pudimos guardar el comprobante. Puedes enviarlo directamente a nuestro WhatsApp (312 547 3848).');
@@ -64,7 +70,7 @@ const PaymentPage: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  if (items.length === 0) {
+  if (items.length === 0 && !existingOrder) {
     return (
       <div style={{ background: 'var(--blush)', minHeight: '100vh', color: 'var(--wine)' }}>
         <Header />
@@ -84,7 +90,7 @@ const PaymentPage: React.FC = () => {
         {/* Encabezado */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <span className="lbl" style={{ color: 'var(--wine)', fontSize: '0.85rem' }}>
-            Orden #{orderId}
+            Orden #{activeOrderId}
           </span>
           <h1 
             className="d"
@@ -95,10 +101,12 @@ const PaymentPage: React.FC = () => {
               lineHeight: 1.05
             }}
           >
-            Completa tu Pago
+            {existingOrder ? 'Actualiza tu Comprobante' : 'Completa tu Pago'}
           </h1>
           <p style={{ color: '#665', fontSize: '1.05rem', margin: 0 }}>
-            Transfiere el valor exacto de tu pedido a través de tu app favorita y sube tu comprobante.
+            {existingOrder 
+              ? 'Transfiere o adjunta tu nuevo soporte de pago para verificar tu pedido de inmediato.' 
+              : 'Transfiere el valor exacto de tu pedido a través de tu app favorita y sube tu comprobante.'}
           </p>
         </div>
 

@@ -144,9 +144,21 @@ const CheckoutPage: React.FC = () => {
         subtotal: total,
         tax: 0,
         total,
-        status: 'Pendiente de pago',
+        status: 'Pendiente por validación',
         channel: 'Web / QR'
       });
+
+      // Guardar en el historial de pedidos de este dispositivo para seguimiento inmediato
+      try {
+        const raw = localStorage.getItem('sablee_user_orders');
+        const userOrders: string[] = raw ? JSON.parse(raw) : [];
+        if (!userOrders.includes(orderId)) {
+          userOrders.unshift(orderId);
+          localStorage.setItem('sablee_user_orders', JSON.stringify(userOrders));
+        }
+      } catch (e) {
+        console.warn('No se pudo guardar en sablee_user_orders', e);
+      }
 
       navigate(`/payment?id=${orderId}`);
     } catch (err) {
@@ -188,9 +200,21 @@ const CheckoutPage: React.FC = () => {
       subtotal: total,
       tax: 0,
       total,
-      status: 'Pendiente de pago',
+      status: 'Pendiente por validación',
       channel: 'WhatsApp'
     });
+
+    // Guardar en el historial de pedidos de este dispositivo para seguimiento inmediato
+    try {
+      const raw = localStorage.getItem('sablee_user_orders');
+      const userOrders: string[] = raw ? JSON.parse(raw) : [];
+      if (!userOrders.includes(orderId)) {
+        userOrders.unshift(orderId);
+        localStorage.setItem('sablee_user_orders', JSON.stringify(userOrders));
+      }
+    } catch (e) {
+      console.warn('No se pudo guardar en sablee_user_orders', e);
+    }
 
     const itemsList = items.map(i => `• ${i.quantity}x ${i.name} - $${(i.price * i.quantity).toLocaleString('es-CO')}`).join('\n');
     const adminUrl = `${window.location.origin}/admin`;

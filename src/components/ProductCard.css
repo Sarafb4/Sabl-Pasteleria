@@ -1,8 +1,8 @@
 .card{
   position:relative;
-  min-height:14rem !important;
-  border-radius:24px;
-  padding:20px;
+  min-height:14.5rem !important;
+  border-radius:28px;
+  padding:26px 24px 22px;
   display:flex;
   flex-direction:column;
   justify-content:space-between;
@@ -15,10 +15,34 @@
   transform:translateY(-8px) rotate(-1deg);
   box-shadow: 0 15px 30px rgba(0,0,0,0.08);
 }
-.card .l{position:absolute;right:-15px;top:-20px;font-size:10rem !important;opacity:.15;transition:transform .7s}
+.card .l{
+  position:absolute;
+  right:-10px;
+  top:-20px;
+  font-size:11rem !important;
+  opacity:.12;
+  transition:transform .7s;
+  pointer-events:none;
+}
 .card:hover .l{transform:scale(1.08) rotate(6deg)}
-.card h3{font-size:clamp(1.5rem,3vw,2.2rem) !important;position:relative}
-.row{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;position:relative;font-size:1.2rem}
+.card h3{
+  font-size:clamp(2.4rem, 4.4vw, 3.4rem) !important;
+  line-height:1.05 !important;
+  margin:0 !important;
+  position:relative;
+  letter-spacing:-0.5px;
+  font-weight:700;
+}
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:16px;
+  position:relative;
+  font-size:1.15rem;
+  margin-top:auto;
+  padding-top:28px;
+}
 .row b{display:block;font-family:'Jost',sans-serif;font-weight:600;font-size:1.4rem;margin-top:6px}
 
 .card button.galleta-btn {

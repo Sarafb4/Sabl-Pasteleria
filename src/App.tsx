@@ -12,10 +12,12 @@ import AdminPanel from './pages/AdminPanel';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import CartSidebar from './components/CartSidebar';
+import ScrollToTop from './components/ScrollToTop';
 
 const App: React.FC = () => {
   return (
     <>
+      <ScrollToTop />
       <Toaster 
         position="bottom-center"
         toastOptions={{

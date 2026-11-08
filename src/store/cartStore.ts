@@ -17,6 +17,7 @@ interface CartStore {
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   toggleCart: () => void;
+  reorderItems: (orderItems: Array<{ id?: string; name: string; price: number; quantity: number }>) => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
 }
@@ -24,6 +25,18 @@ interface CartStore {
 export const useCartStore = create<CartStore>((set, get) => ({
   items: [],
   isCartOpen: false,
+
+  reorderItems: (orderItems) => set({
+    items: orderItems.map((it, idx) => ({
+      id: it.id || `reorder-${idx}-${it.name.toLowerCase().replace(/\s+/g, '-')}`,
+      name: it.name,
+      price: it.price,
+      quantity: it.quantity || 1,
+      bg: 'var(--wine)',
+      color: 'var(--blush)'
+    })),
+    isCartOpen: true
+  }),
 
   addItem: (newItem) => set((state) => {
     const id = newItem.id || newItem.name.toLowerCase().replace(/\s+/g, '-');

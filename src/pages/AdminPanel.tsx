@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import Header from '../components/Header';
-import { useOrderStore, OrderStatus, playOrderChime } from '../store/orderStore';
+import { useOrderStore, OrderStatus, playOrderChime, DaySchedule, DEFAULT_DAYS } from '../store/orderStore';
 import { usePaymentStore, PaymentMethod } from '../store/paymentStore';
 import { useMenuStore } from '../store/menuStore';
 import { MenuItem, Presentation } from '../data/menuData';
@@ -24,6 +24,7 @@ import {
   Plus, 
   Bell, 
   BellRing, 
+  Calendar,
   QrCode, 
   CreditCard, 
   Edit3, 
@@ -32,19 +33,81 @@ import {
   RotateCcw,
   Mail,
   Send,
-  Copy
+  Copy,
+  Truck,
+  ChevronDown,
+  AlertTriangle
 } from 'lucide-react';
 import { sendTestEmailNotification } from '../services/emailService';
 import { checkRateLimit } from '../utils/rateLimiter';
 import toast from 'react-hot-toast';
 
 const STATUS_COLORS: Record<OrderStatus, { bg: string; text: string }> = {
-  'Pendiente de pago': { bg: '#fff3cd', text: '#856404' },
+  'Pendiente por validación': { bg: '#fef3c7', text: '#92400e' },
   'Confirmado': { bg: '#d1ecf1', text: '#0c5460' },
   'En preparación': { bg: '#ffeeba', text: '#b86a04' },
   'En camino': { bg: '#e2e3e5', text: '#383d41' },
-  'Entregado': { bg: '#d4edda', text: '#155724' }
+  'Entregado': { bg: '#d4edda', text: '#155724' },
+  'Pago no validado': { bg: '#fee2e2', text: '#991b1b' }
 };
+
+const ALL_STATUS_OPTIONS: Array<{
+  status: OrderStatus;
+  label: string;
+  badgeDesc: string;
+  bg: string;
+  text: string;
+  icon: any;
+}> = [
+  {
+    status: 'Pendiente por validación',
+    label: 'Pendiente por validación',
+    badgeDesc: 'Comprobante recibido para revisar',
+    bg: '#fef3c7',
+    text: '#92400e',
+    icon: Clock
+  },
+  {
+    status: 'Confirmado',
+    label: 'Confirmado (Pago OK)',
+    badgeDesc: 'Pago recibido y validado',
+    bg: '#d1ecf1',
+    text: '#0c5460',
+    icon: CheckCircle
+  },
+  {
+    status: 'En preparación',
+    label: 'En preparación',
+    badgeDesc: 'Horneando en cocina',
+    bg: '#ffeeba',
+    text: '#b86a04',
+    icon: Package
+  },
+  {
+    status: 'En camino',
+    label: 'En camino / Enviado',
+    badgeDesc: 'Con mensajero a domicilio',
+    bg: '#e2e3e5',
+    text: '#383d41',
+    icon: Truck
+  },
+  {
+    status: 'Entregado',
+    label: 'Entregado con éxito',
+    badgeDesc: 'Pedido recibido por cliente',
+    bg: '#d4edda',
+    text: '#155724',
+    icon: CheckCircle
+  },
+  {
+    status: 'Pago no validado',
+    label: 'Pago no validado',
+    badgeDesc: 'Transferencia no recibida / rechazada',
+    bg: '#fee2e2',
+    text: '#991b1b',
+    icon: AlertTriangle
+  }
+];
 
 const GOOGLE_SCRIPT_SNIPPET = `function doPost(e) {
   try {
@@ -100,6 +163,7 @@ const AdminPanel: React.FC = () => {
   const [newPhoneInput, setNewPhoneInput] = useState('');
   const [activeTab, setActiveTab] = useState<'pedidos' | 'carta' | 'pagos' | 'ajustes'>('pedidos');
   const [settingsSubTab, setSettingsSubTab] = useState<'horario' | 'correo' | 'seguridad'>('horario');
+  const [openStatusDropdownId, setOpenStatusDropdownId] = useState<string | null>(null);
 
   // Claves de almacenamiento para bloqueo persistente contra ataques de fuerza bruta
   const LOCKOUT_KEY = 'sablee_admin_lockout_until';
@@ -137,11 +201,35 @@ const AdminPanel: React.FC = () => {
   const [showNewPass, setShowNewPass] = useState(false);
 
   // Estados para horario de atención
-  const [weekdaysInput, setWeekdaysInput] = useState(schedule.weekdays);
-  const [saturdaysInput, setSaturdaysInput] = useState(schedule.saturdays);
-  const [sundaysInput, setSundaysInput] = useState(schedule.sundays);
+  const [daysSchedule, setDaysSchedule] = useState<DaySchedule[]>(
+    Array.isArray(schedule.days) && schedule.days.length > 0 ? schedule.days : DEFAULT_DAYS
+  );
   const [noticeInput, setNoticeInput] = useState(schedule.notice);
   const [footerTextInput, setFooterTextInput] = useState(schedule.footerText || '');
+
+  const handleToggleDay = (dayName: string) => {
+    setDaysSchedule(prev => prev.map(d => {
+      if (d.day === dayName) {
+        const nextOpen = !d.isOpen;
+        return {
+          ...d,
+          isOpen: nextOpen,
+          hours: nextOpen && (!d.hours || d.hours === 'Cerrado') ? '8:00 AM - 7:00 PM' : d.hours
+        };
+      }
+      return d;
+    }));
+  };
+
+  const handleDayHoursChange = (dayName: string, newHours: string) => {
+    setDaysSchedule(prev => prev.map(d => d.day === dayName ? { ...d, hours: newHours } : d));
+  };
+
+  const handleCopyHoursToAll = (sourceHours: string) => {
+    if (!sourceHours || sourceHours === 'Cerrado') return;
+    setDaysSchedule(prev => prev.map(d => d.isOpen ? { ...d, hours: sourceHours } : d));
+    toast.success(`Horario "${sourceHours}" copiado a todos los días abiertos.`);
+  };
 
   // Estados para alertas automáticas por Correo (Google Apps Script - Gmail Directo)
   const [emailEnabled, setEmailEnabled] = useState(emailConfig.enabled);
@@ -151,9 +239,7 @@ const AdminPanel: React.FC = () => {
   const [copiedScript, setCopiedScript] = useState(false);
 
   useEffect(() => {
-    setWeekdaysInput(schedule.weekdays);
-    setSaturdaysInput(schedule.saturdays);
-    setSundaysInput(schedule.sundays);
+    setDaysSchedule(Array.isArray(schedule.days) && schedule.days.length > 0 ? schedule.days : DEFAULT_DAYS);
     setNoticeInput(schedule.notice);
     setFooterTextInput(schedule.footerText || '');
     
@@ -180,6 +266,20 @@ const AdminPanel: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [lockoutTimer]);
+
+  // Cerrar selector de estado al hacer clic afuera
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.status-dropdown-container')) {
+        setOpenStatusDropdownId(null);
+      }
+    };
+    if (openStatusDropdownId) {
+      document.addEventListener('click', handleOutsideClick);
+    }
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, [openStatusDropdownId]);
   
   // Gestión de la carta / catálogo
   const {
@@ -480,14 +580,45 @@ const AdminPanel: React.FC = () => {
 
   const handleSaveSchedule = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const openWeekdays = daysSchedule.filter(d => ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'].includes(d.day) && d.isOpen);
+    const sat = daysSchedule.find(d => d.day === 'Sábado');
+    const sun = daysSchedule.find(d => d.day === 'Domingo');
+    const fest = daysSchedule.find(d => d.day === 'Festivos');
+
+    let weekdaysText = '';
+    if (openWeekdays.length === 5) {
+      weekdaysText = `Lunes a Viernes: ${openWeekdays[0].hours}`;
+    } else if (openWeekdays.length === 0) {
+      weekdaysText = 'Lunes a Viernes: Cerrado';
+    } else {
+      weekdaysText = `${openWeekdays.map(d => d.day).join(', ')}: ${openWeekdays[0].hours}`;
+    }
+
+    const saturdayText = sat?.isOpen ? `Sábados: ${sat.hours}` : 'Sábados: Cerrado';
+    const sundayText = sun?.isOpen 
+      ? `Domingos: ${sun.hours}${fest?.isOpen ? ` · Festivos: ${fest.hours}` : ''}`
+      : (fest?.isOpen ? `Domingos: Cerrado · Festivos: ${fest.hours}` : 'Domingos y Festivos: Cerrado');
+
+    const openDaysList = daysSchedule.filter(d => d.isOpen);
+    let autoFooterText = footerTextInput.trim();
+    if (!autoFooterText) {
+      if (openDaysList.length === 8 || openDaysList.length === 7) {
+        autoFooterText = 'Abierto todos los días';
+      } else {
+        autoFooterText = `Atendemos de ${openDaysList.map(d => d.day).join(', ')}`;
+      }
+    }
+
     setSchedule({
-      weekdays: weekdaysInput,
-      saturdays: saturdaysInput,
-      sundays: sundaysInput,
+      days: daysSchedule,
+      weekdays: weekdaysText,
+      saturdays: saturdayText,
+      sundays: sundayText,
       notice: noticeInput,
-      footerText: footerTextInput
+      footerText: autoFooterText
     });
-    toast.success('¡Horario de atención guardado con éxito!');
+    toast.success('¡Días y horarios de atención actualizados con éxito!');
   };
 
   const handleSaveEmailConfig = (e: React.FormEvent) => {
@@ -726,7 +857,7 @@ const AdminPanel: React.FC = () => {
   // Métricas
   const totalOrdersCount = orders.length;
   const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
-  const pendingOrdersCount = orders.filter(o => o.status === 'Pendiente de pago' || o.status === 'En preparación').length;
+  const pendingOrdersCount = orders.filter(o => o.status === 'Pendiente por validación' || o.status === 'En preparación').length;
   const completedOrdersCount = orders.filter(o => o.status === 'Entregado').length;
 
   // Filtrado
@@ -739,6 +870,53 @@ const AdminPanel: React.FC = () => {
     return matchesStatus && matchesSearch;
   });
 
+  const getOrderDateInfo = (dateStr: string) => {
+    if (!dateStr) return { label: 'Sin Fecha', timestamp: 0 };
+    
+    let d = new Date(dateStr);
+    if (isNaN(d.getTime())) {
+      const parts = dateStr.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/);
+      if (parts) {
+        d = new Date(parseInt(parts[3], 10), parseInt(parts[2], 10) - 1, parseInt(parts[1], 10));
+      }
+    }
+
+    if (isNaN(d.getTime())) return { label: 'Otros Pedidos', timestamp: 0 };
+
+    const monthNames = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    const month = monthNames[d.getMonth()];
+    const year = d.getFullYear();
+    return {
+      label: `${month} ${year}`,
+      timestamp: new Date(year, d.getMonth(), 1).getTime()
+    };
+  };
+
+  const groupedOrdersByMonth = useMemo(() => {
+    const groups: Record<string, { label: string; timestamp: number; orders: typeof orders; totalRevenue: number }> = {};
+
+    filteredOrders.forEach(order => {
+      const { label, timestamp } = getOrderDateInfo(order.date);
+      if (!groups[label]) {
+        groups[label] = {
+          label,
+          timestamp,
+          orders: [],
+          totalRevenue: 0
+        };
+      }
+      groups[label].orders.push(order);
+      groups[label].totalRevenue += order.total;
+    });
+
+    // Ordenar los meses del más reciente al más antiguo
+    return Object.values(groups).sort((a, b) => b.timestamp - a.timestamp);
+  }, [filteredOrders]);
+
   const filteredMenuItems = menuItems.filter(item => {
     if (menuFilterCategory === 'todas') return true;
     return item.category === menuFilterCategory;
@@ -750,270 +928,240 @@ const AdminPanel: React.FC = () => {
       
       <div style={{ paddingTop: '140px', maxWidth: '1200px', margin: '0 auto', paddingLeft: '20px', paddingRight: '20px' }}>
         
-        {/* Barra superior con acciones */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px', marginBottom: '24px' }}>
+        {/* Barra superior con acciones unificadas y limpias */}
+        <div style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          flexWrap: 'wrap', 
+          gap: '16px', 
+          marginBottom: '28px',
+          paddingBottom: '20px',
+          borderBottom: '1px solid rgba(123, 26, 16, 0.1)'
+        }}>
           <div>
-            <span className="lbl" style={{ color: 'var(--wine)', fontSize: '0.9rem' }}>Panel de Administración</span>
-            <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(2.5rem, 6vw, 3.8rem)', margin: 0 }}>
-              Gestión de Pedidos
+            <span className="lbl" style={{ color: 'var(--wine)', fontSize: '0.82rem', letterSpacing: '0.08em' }}>
+              Panel de Administración
+            </span>
+            <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(2.2rem, 5vw, 3.2rem)', margin: '2px 0 0', lineHeight: 1.1 }}>
+              {activeTab === 'pedidos' ? 'Gestión de Pedidos' : 
+               activeTab === 'carta' ? 'Catálogo & Menú' : 
+               activeTab === 'pagos' ? 'Medios de Pago & QR' : 
+               'Configuración & Horarios'}
             </h1>
           </div>
 
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Teléfono de WhatsApp (Compacto y elegante) */}
             <button 
               type="button"
               onClick={() => {
                 setNewPhoneInput(formatPhoneDisplay(bakeryPhone));
                 setShowPhoneModal(true);
               }}
-              title="Configurar el número de WhatsApp donde te llegan las notificaciones de pedidos"
+              title="Clic para cambiar el número de WhatsApp"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '8px',
                 background: '#ffffff',
                 color: 'var(--wine)',
-                border: '1.5px solid rgba(123, 26, 16, 0.3)',
-                padding: '11px 20px',
+                border: '1px solid rgba(123, 26, 16, 0.2)',
+                padding: '9px 16px',
                 borderRadius: '99px',
                 fontWeight: 600,
-                fontSize: '0.95rem',
+                fontSize: '0.88rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 14px rgba(123, 26, 16, 0.08)',
+                boxShadow: '0 2px 8px rgba(123, 26, 16, 0.05)',
                 transition: 'all 0.2s ease'
               }}
             >
-              <MessageCircle size={18} color="var(--wine)" />
-              <span>WhatsApp: <strong>{formatPhoneDisplay(bakeryPhone)}</strong></span>
+              <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#25D366' }} />
+              <MessageCircle size={15} color="var(--wine)" />
+              <span>{formatPhoneDisplay(bakeryPhone)}</span>
             </button>
 
+            {/* Registrar Pedido Manual (Botón de acción principal) */}
             <button 
               onClick={() => setShowManualModal(true)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
+                gap: '6px',
                 background: 'var(--wine)',
                 color: 'var(--blush)',
                 border: 'none',
-                padding: '12px 22px',
+                padding: '9px 18px',
                 borderRadius: '99px',
-                fontWeight: 600,
+                fontWeight: 700,
+                fontSize: '0.9rem',
                 cursor: 'pointer',
-                boxShadow: '0 4px 12px rgba(123, 26, 16, 0.2)'
+                boxShadow: '0 3px 10px rgba(123, 26, 16, 0.25)',
+                transition: 'transform 0.15s ease'
               }}
             >
-              <Plus size={18} />
-              <span>Registrar Pedido Manual</span>
+              <Plus size={16} />
+              <span>Nuevo Pedido</span>
             </button>
 
+            {/* Cerrar Sesión (Discreto y sobrio) */}
             <button 
               onClick={logout}
+              title="Cerrar sesión de administrador"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '8px',
-                background: '#fff',
-                color: 'var(--wine)',
-                border: '1px solid rgba(123, 26, 16, 0.2)',
-                padding: '12px 22px',
+                gap: '6px',
+                background: 'transparent',
+                color: '#666',
+                border: '1px solid rgba(0, 0, 0, 0.12)',
+                padding: '9px 14px',
                 borderRadius: '99px',
                 fontWeight: 600,
-                cursor: 'pointer'
+                fontSize: '0.88rem',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
               }}
             >
-              <LogOut size={18} />
-              <span>Cerrar Sesión</span>
+              <LogOut size={15} />
+              <span>Salir</span>
             </button>
           </div>
         </div>
 
-        {/* Pestañas de Navegación del Panel: Pedidos / Medios de Pago */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '28px', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setActiveTab('pedidos')}
-            style={{
-              padding: '12px 26px',
-              borderRadius: '99px',
-              border: activeTab === 'pedidos' ? 'none' : '1.5px solid rgba(123, 26, 16, 0.2)',
-              background: activeTab === 'pedidos' ? 'var(--wine)' : '#ffffff',
-              color: activeTab === 'pedidos' ? 'var(--blush)' : 'var(--wine2)',
-              fontWeight: 600,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: activeTab === 'pedidos' ? '0 4px 14px rgba(123, 26, 16, 0.2)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Package size={18} />
-            <span>Gestión de Pedidos ({orders.length})</span>
-          </button>
+        {/* Barra de Pestañas Segmentada (Limpia, moderna y unificada) */}
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{ 
+            display: 'inline-flex', 
+            background: '#ffffff', 
+            padding: '5px', 
+            borderRadius: '99px', 
+            border: '1px solid rgba(123, 26, 16, 0.15)',
+            boxShadow: '0 4px 16px rgba(123, 26, 16, 0.05)',
+            gap: '4px',
+            maxWidth: '100%',
+            overflowX: 'auto'
+          }}>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pedidos')}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '99px',
+                border: 'none',
+                background: activeTab === 'pedidos' ? 'var(--wine)' : 'transparent',
+                color: activeTab === 'pedidos' ? 'var(--blush)' : 'var(--wine2)',
+                fontWeight: activeTab === 'pedidos' ? 700 : 600,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: activeTab === 'pedidos' ? '0 3px 10px rgba(123, 26, 16, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <Package size={16} />
+              <span>Pedidos</span>
+              <span style={{
+                background: activeTab === 'pedidos' ? 'rgba(255,255,255,0.25)' : 'rgba(123, 26, 16, 0.08)',
+                color: activeTab === 'pedidos' ? '#fff' : 'var(--wine)',
+                padding: '2px 8px',
+                borderRadius: '99px',
+                fontSize: '0.78rem',
+                fontWeight: 700
+              }}>
+                {orders.length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('carta')}
-            style={{
-              padding: '12px 26px',
-              borderRadius: '99px',
-              border: activeTab === 'carta' ? 'none' : '1.5px solid rgba(123, 26, 16, 0.2)',
-              background: activeTab === 'carta' ? 'var(--wine)' : '#ffffff',
-              color: activeTab === 'carta' ? 'var(--blush)' : 'var(--wine2)',
-              fontWeight: 600,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: activeTab === 'carta' ? '0 4px 14px rgba(123, 26, 16, 0.2)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <BookOpen size={18} />
-            <span>Actualizar Carta ({menuItems.length})</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('carta')}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '99px',
+                border: 'none',
+                background: activeTab === 'carta' ? 'var(--wine)' : 'transparent',
+                color: activeTab === 'carta' ? 'var(--blush)' : 'var(--wine2)',
+                fontWeight: activeTab === 'carta' ? 700 : 600,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: activeTab === 'carta' ? '0 3px 10px rgba(123, 26, 16, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <BookOpen size={16} />
+              <span>Menú & Carta</span>
+              <span style={{
+                background: activeTab === 'carta' ? 'rgba(255,255,255,0.25)' : 'rgba(123, 26, 16, 0.08)',
+                color: activeTab === 'carta' ? '#fff' : 'var(--wine)',
+                padding: '2px 8px',
+                borderRadius: '99px',
+                fontSize: '0.78rem',
+                fontWeight: 700
+              }}>
+                {menuItems.length}
+              </span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('pagos')}
-            style={{
-              padding: '12px 26px',
-              borderRadius: '99px',
-              border: activeTab === 'pagos' ? 'none' : '1.5px solid rgba(123, 26, 16, 0.2)',
-              background: activeTab === 'pagos' ? 'var(--wine)' : '#ffffff',
-              color: activeTab === 'pagos' ? 'var(--blush)' : 'var(--wine2)',
-              fontWeight: 600,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: activeTab === 'pagos' ? '0 4px 14px rgba(123, 26, 16, 0.2)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <QrCode size={18} />
-            <span>Medios de Pago & Códigos QR</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pagos')}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '99px',
+                border: 'none',
+                background: activeTab === 'pagos' ? 'var(--wine)' : 'transparent',
+                color: activeTab === 'pagos' ? 'var(--blush)' : 'var(--wine2)',
+                fontWeight: activeTab === 'pagos' ? 700 : 600,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: activeTab === 'pagos' ? '0 3px 10px rgba(123, 26, 16, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <QrCode size={16} />
+              <span>Medios de Pago</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => setActiveTab('ajustes')}
-            style={{
-              padding: '12px 26px',
-              borderRadius: '99px',
-              border: activeTab === 'ajustes' ? 'none' : '1.5px solid rgba(123, 26, 16, 0.2)',
-              background: activeTab === 'ajustes' ? 'var(--wine)' : '#ffffff',
-              color: activeTab === 'ajustes' ? 'var(--blush)' : 'var(--wine2)',
-              fontWeight: 600,
-              fontSize: '1rem',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              boxShadow: activeTab === 'ajustes' ? '0 4px 14px rgba(123, 26, 16, 0.2)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <ShieldCheck size={18} />
-            <span>Horario, Correo & Seguridad</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('ajustes')}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '99px',
+                border: 'none',
+                background: activeTab === 'ajustes' ? 'var(--wine)' : 'transparent',
+                color: activeTab === 'ajustes' ? 'var(--blush)' : 'var(--wine2)',
+                fontWeight: activeTab === 'ajustes' ? 700 : 600,
+                fontSize: '0.92rem',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: activeTab === 'ajustes' ? '0 3px 10px rgba(123, 26, 16, 0.25)' : 'none',
+                transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              <ShieldCheck size={16} />
+              <span>Configuración</span>
+            </button>
+          </div>
         </div>
 
         {activeTab === 'pedidos' ? (
           <>
-            {/* Banner de Alertas Automáticas (Sonido + Pantalla) - Estilo Sablée */}
-            <div style={{
-              background: '#ffffff',
-              border: '1.5px solid rgba(123, 26, 16, 0.14)',
-              borderRadius: '24px',
-              padding: '18px 24px',
-              marginBottom: '28px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '16px',
-              boxShadow: '0 6px 20px rgba(123, 26, 16, 0.04)'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ 
-                  background: hasNotifPermission ? 'var(--wine)' : 'var(--petal)', 
-                  color: hasNotifPermission ? 'var(--blush)' : 'var(--wine)', 
-                  width: '46px',
-                  height: '46px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  {hasNotifPermission ? <BellRing size={22} /> : <Bell size={22} />}
-                </div>
-                <div>
-                  <strong style={{ display: 'block', color: 'var(--wine)', fontSize: '1.02rem', fontWeight: 700 }}>
-                    {hasNotifPermission 
-                      ? 'Campana y avisos automáticos activos' 
-                      : 'Activa las alertas automáticas de nuevos pedidos'}
-                  </strong>
-                  <span style={{ fontSize: '0.86rem', color: '#666', lineHeight: 1.4, display: 'block', marginTop: '2px' }}>
-                    {hasNotifPermission 
-                      ? 'Cada vez que ingrese un nuevo pedido, sonará una campana dulce y verás la orden en pantalla al instante.' 
-                      : 'Recibe una campana sonora y una notificación instantánea en este dispositivo cada vez que un cliente pida.'}
-                  </span>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                {hasNotifPermission ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      playOrderChime();
-                      toast.success('Campana de pedidos sonando perfectamente.');
-                    }}
-                    style={{
-                      background: 'var(--petal)',
-                      color: 'var(--wine)',
-                      border: '1px solid rgba(123, 26, 16, 0.2)',
-                      padding: '10px 20px',
-                      borderRadius: '99px',
-                      fontWeight: 600,
-                      fontSize: '0.88rem',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <span>Probar Sonido</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleEnableNotifications}
-                    style={{
-                      background: 'var(--wine)',
-                      color: 'var(--blush)',
-                      border: 'none',
-                      padding: '11px 24px',
-                      borderRadius: '99px',
-                      fontWeight: 600,
-                      fontSize: '0.92rem',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(123, 26, 16, 0.2)'
-                    }}
-                  >
-                    Activar Campana Sonora
-                  </button>
-                )}
-              </div>
-            </div>
-
             {/* Tarjetas de Métricas (KPIs) con Estilo Sablée */}
             <div style={{ 
               display: 'grid', 
@@ -1185,7 +1333,7 @@ const AdminPanel: React.FC = () => {
 
           {/* Filtros por pestaña */}
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-            {['todos', 'Pendiente de pago', 'En preparación', 'En camino', 'Entregado'].map(st => {
+            {['todos', 'Pendiente por validación', 'Confirmado', 'En preparación', 'En camino', 'Entregado', 'Pago no validado'].map(st => {
               const isSelected = filterStatus.toLowerCase() === st.toLowerCase();
               return (
                 <button
@@ -1219,12 +1367,65 @@ const AdminPanel: React.FC = () => {
               <p>No hay pedidos con el filtro seleccionado.</p>
             </div>
           ) : (
-            filteredOrders.map(order => {
-              const statusStyle = STATUS_COLORS[order.status] || { bg: '#eee', text: '#333' };
-              const cleanPhone = order.customer.phone.replace(/[^0-9]/g, '');
-              const waLink = `https://wa.me/57${cleanPhone}?text=Hola%20${encodeURIComponent(order.customer.name)},%20te%20escribimos%20de%20Sabl%C3%A9e%20Pasteler%C3%ADa%20sobre%20tu%20pedido%20%23${order.id}`;
+            groupedOrdersByMonth.map(group => (
+              <div key={group.label} style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
+                {/* Cabecera del Mes */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: '12px',
+                  background: '#ffffff',
+                  padding: '14px 22px',
+                  borderRadius: '20px',
+                  border: '1px solid rgba(123, 26, 16, 0.1)',
+                  boxShadow: '0 4px 14px rgba(123, 26, 16, 0.04)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      background: 'rgba(123, 26, 16, 0.08)',
+                      color: 'var(--wine)',
+                      padding: '8px',
+                      borderRadius: '12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}>
+                      <Calendar size={18} />
+                    </div>
+                    <div>
+                      <h3 style={{ margin: 0, color: 'var(--wine)', fontSize: '1.25rem', fontFamily: 'Jost, sans-serif', fontWeight: 700 }}>
+                        {group.label}
+                      </h3>
+                      <span style={{ fontSize: '0.82rem', color: '#777' }}>
+                        {group.orders.length} {group.orders.length === 1 ? 'pedido registrado' : 'pedidos registrados'}
+                      </span>
+                    </div>
+                  </div>
 
-              return (
+                  <div style={{
+                    background: 'rgba(123, 26, 16, 0.05)',
+                    padding: '6px 14px',
+                    borderRadius: '99px',
+                    fontSize: '0.9rem',
+                    color: 'var(--wine2)'
+                  }}>
+                    <span>Ventas del mes: </span>
+                    <strong style={{ color: 'var(--wine)', fontFamily: 'Jost, sans-serif', fontSize: '1.05rem' }}>
+                      {formatCOP(group.totalRevenue)}
+                    </strong>
+                  </div>
+                </div>
+
+                {/* Pedidos de este mes */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {group.orders.map(order => {
+                    const statusStyle = STATUS_COLORS[order.status] || { bg: '#eee', text: '#333' };
+                    const cleanPhone = order.customer.phone.replace(/[^0-9]/g, '');
+                    const waLink = `https://wa.me/57${cleanPhone}?text=Hola%20${encodeURIComponent(order.customer.name)},%20te%20escribimos%20de%20Sabl%C3%A9e%20Pasteler%C3%ADa%20sobre%20tu%20pedido%20%23${order.id}`;
+
+                    return (
                 <div 
                   key={order.id} 
                   style={{ 
@@ -1258,35 +1459,130 @@ const AdminPanel: React.FC = () => {
                       </span>
                     </div>
 
-                    {/* Selector de Estado y Acciones */}
+                    {/* Selector de Estado y Acciones de Lujo */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#666' }}>Estado:</span>
-                      <select 
-                        value={order.status}
-                        onChange={(e) => handleStatusChange(order.id, e.target.value as OrderStatus)}
-                        style={{
-                          background: statusStyle.bg,
-                          color: statusStyle.text,
-                          border: `1px solid ${statusStyle.text}40`,
-                          padding: '8px 16px',
-                          borderRadius: '99px',
-                          fontWeight: 600,
-                          fontSize: '0.9rem',
-                          cursor: 'pointer',
-                          outline: 'none'
-                        }}
-                      >
-                        <option value="Pendiente de pago">Pendiente de pago</option>
-                        <option value="Confirmado">Confirmado (Pago OK)</option>
-                        <option value="En preparación">En preparación</option>
-                        <option value="En camino">En camino / Enviado</option>
-                        <option value="Entregado">Entregado</option>
-                      </select>
+                      
+                      <div className="status-dropdown-container" style={{ position: 'relative' }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenStatusDropdownId(prev => prev === order.id ? null : order.id);
+                          }}
+                          style={{
+                            background: statusStyle.bg,
+                            color: statusStyle.text,
+                            border: `1.5px solid ${statusStyle.text}50`,
+                            padding: '8px 16px',
+                            borderRadius: '99px',
+                            fontWeight: 700,
+                            fontSize: '0.88rem',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: statusStyle.text, display: 'inline-block' }}></span>
+                          <span>{order.status}</span>
+                          <ChevronDown 
+                            size={14} 
+                            style={{ 
+                              transform: openStatusDropdownId === order.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                              transition: 'transform 0.2s ease'
+                            }} 
+                          />
+                        </button>
+
+                        {openStatusDropdownId === order.id && (
+                          <div style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 8px)',
+                            right: 0,
+                            background: '#ffffff',
+                            borderRadius: '20px',
+                            padding: '8px',
+                            boxShadow: '0 14px 40px rgba(123, 26, 16, 0.16)',
+                            border: '1.5px solid #eed6db',
+                            zIndex: 100,
+                            width: '270px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '4px'
+                          }}>
+                            <div style={{ padding: '8px 12px 6px', fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, color: '#999' }}>
+                              Cambiar estado de orden
+                            </div>
+                            {ALL_STATUS_OPTIONS.map(opt => {
+                              const isCurrent = order.status === opt.status;
+                              const IconComponent = opt.icon;
+                              return (
+                                <button
+                                  key={opt.status}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStatusChange(order.id, opt.status);
+                                    setOpenStatusDropdownId(null);
+                                  }}
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '10px 12px',
+                                    borderRadius: '14px',
+                                    border: isCurrent ? `1.5px solid ${opt.text}` : '1px solid transparent',
+                                    background: isCurrent ? opt.bg : 'transparent',
+                                    color: opt.text,
+                                    cursor: 'pointer',
+                                    textAlign: 'left',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                  onMouseEnter={(e) => {
+                                    if (!isCurrent) e.currentTarget.style.background = opt.bg;
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    if (!isCurrent) e.currentTarget.style.background = 'transparent';
+                                  }}
+                                >
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <div style={{
+                                      width: '28px',
+                                      height: '28px',
+                                      borderRadius: '50%',
+                                      background: opt.bg,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      color: opt.text,
+                                      flexShrink: 0
+                                    }}>
+                                      <IconComponent size={14} />
+                                    </div>
+                                    <div>
+                                      <div style={{ fontSize: '0.86rem', fontWeight: 700, lineHeight: 1.2 }}>
+                                        {opt.label}
+                                      </div>
+                                      <div style={{ fontSize: '0.74rem', opacity: 0.8, marginTop: '2px' }}>
+                                        {opt.badgeDesc}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {isCurrent && <Check size={16} color={opt.text} style={{ flexShrink: 0, marginLeft: '6px' }} />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
 
                       <button 
                         onClick={() => handleDelete(order.id)}
                         title="Eliminar pedido"
-                        style={{ background: 'var(--petal)', border: 'none', color: 'var(--wine)', padding: '8px', borderRadius: '50%', cursor: 'pointer' }}
+                        style={{ background: 'var(--petal)', border: 'none', color: 'var(--wine)', padding: '8px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -1386,8 +1682,11 @@ const AdminPanel: React.FC = () => {
                   </div>
                 </div>
               );
-            })
-          )}
+            })}
+          </div>
+        </div>
+      ))
+    )}
         </div>
       </>
     ) : activeTab === 'carta' ? (
@@ -2208,47 +2507,160 @@ const AdminPanel: React.FC = () => {
                 </button>
               </div>
 
-              <form onSubmit={handleSaveSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+              <form onSubmit={handleSaveSchedule} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+                {/* Días y Horarios de Atención Personalizables */}
                 <div>
-                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--wine)', marginBottom: '6px' }}>
-                    Lunes a Viernes
-                  </label>
-                  <input
-                    type="text"
-                    value={weekdaysInput}
-                    onChange={(e) => setWeekdaysInput(e.target.value)}
-                    placeholder="Ej. 8:00 AM - 7:00 PM"
-                    required
-                    style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                  />
-                </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '14px' }}>
+                    <div>
+                      <span style={{ fontSize: '0.96rem', fontWeight: 700, color: 'var(--wine)' }}>
+                        Días y Horarios de Atención
+                      </span>
+                      <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#666' }}>
+                        Haz clic en cada día para activar si atiendes o marcarlo como cerrado / día de descanso.
+                      </p>
+                    </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--wine)', marginBottom: '6px' }}>
-                    Sábados
-                  </label>
-                  <input
-                    type="text"
-                    value={saturdaysInput}
-                    onChange={(e) => setSaturdaysInput(e.target.value)}
-                    placeholder="Ej. 8:30 AM - 6:00 PM"
-                    required
-                    style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                  />
-                </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDaysSchedule(prev => prev.map(d => ({ ...d, isOpen: true })));
+                          toast.success('Todos los días activados.');
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid rgba(123, 26, 16, 0.2)',
+                          padding: '5px 12px',
+                          borderRadius: '99px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          color: 'var(--wine)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Abrir todos
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDaysSchedule(prev => prev.map(d => ({ ...d, isOpen: d.day !== 'Domingo' && d.day !== 'Festivos' })));
+                          toast.success('Configurado: Lunes a Sábado abiertos, Domingos y Festivos cerrados.');
+                        }}
+                        style={{
+                          background: '#ffffff',
+                          border: '1px solid rgba(123, 26, 16, 0.2)',
+                          padding: '5px 12px',
+                          borderRadius: '99px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          color: 'var(--wine)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Lun a Sáb
+                      </button>
+                    </div>
+                  </div>
 
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.88rem', fontWeight: 600, color: 'var(--wine)', marginBottom: '6px' }}>
-                    Domingos y Festivos
-                  </label>
-                  <input
-                    type="text"
-                    value={sundaysInput}
-                    onChange={(e) => setSundaysInput(e.target.value)}
-                    placeholder="Ej. 9:00 AM - 2:00 PM"
-                    required
-                    style={{ width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid #ccc', boxSizing: 'border-box' }}
-                  />
+                  {/* Lista de Días */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {daysSchedule.map((d) => (
+                      <div 
+                        key={d.day}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          flexWrap: 'wrap',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          borderRadius: '16px',
+                          background: d.isOpen ? '#ffffff' : '#fafafa',
+                          border: d.isOpen ? '1.5px solid rgba(123, 26, 16, 0.18)' : '1px solid #e5e5e5',
+                          boxShadow: d.isOpen ? '0 2px 8px rgba(123, 26, 16, 0.04)' : 'none',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {/* Nombre del día e interruptor */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '180px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleToggleDay(d.day)}
+                            style={{
+                              padding: '6px 14px',
+                              borderRadius: '99px',
+                              border: d.isOpen ? '1.5px solid #16a34a' : '1.5px solid #dc2626',
+                              background: d.isOpen ? '#f0fdf4' : '#fef2f2',
+                              color: d.isOpen ? '#15803d' : '#b91c1c',
+                              fontWeight: 700,
+                              fontSize: '0.82rem',
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.2s'
+                            }}
+                          >
+                            <span style={{ 
+                              width: '8px', 
+                              height: '8px', 
+                              borderRadius: '50%', 
+                              background: d.isOpen ? '#16a34a' : '#dc2626' 
+                            }} />
+                            <span>{d.isOpen ? 'Atiende' : 'Cerrado'}</span>
+                          </button>
+
+                          <strong style={{ fontSize: '1rem', color: d.isOpen ? 'var(--wine)' : '#888' }}>
+                            {d.day}
+                          </strong>
+                        </div>
+
+                        {/* Campo de horario o aviso de cerrado */}
+                        <div style={{ flex: 1, minWidth: '220px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {d.isOpen ? (
+                            <>
+                              <input
+                                type="text"
+                                value={d.hours}
+                                onChange={(e) => handleDayHoursChange(d.day, e.target.value)}
+                                placeholder="Ej: 8:00 AM - 7:00 PM"
+                                style={{
+                                  width: '100%',
+                                  padding: '8px 14px',
+                                  borderRadius: '10px',
+                                  border: '1px solid #ccc',
+                                  fontSize: '0.88rem',
+                                  color: '#333'
+                                }}
+                              />
+                              <button
+                                type="button"
+                                title="Copiar este horario a los demás días que atiendes"
+                                onClick={() => handleCopyHoursToAll(d.hours)}
+                                style={{
+                                  background: 'rgba(123, 26, 16, 0.06)',
+                                  border: 'none',
+                                  color: 'var(--wine)',
+                                  padding: '8px 12px',
+                                  borderRadius: '8px',
+                                  fontSize: '0.78rem',
+                                  fontWeight: 600,
+                                  cursor: 'pointer',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                Copiar a todos
+                              </button>
+                            </>
+                          ) : (
+                            <span style={{ fontSize: '0.85rem', color: '#888', fontStyle: 'italic' }}>
+                              Día de descanso (No se toman pedidos este día)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
 
                 <div>

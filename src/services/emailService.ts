@@ -112,7 +112,7 @@ export const buildOrderEmailHtml = (order: any): string => {
                 Estado Actual del Pedido
               </span>
               <span style="font-size: 15px; font-weight: 800; color: #856404; margin-top: 2px; display: block;">
-                ${order.status || 'Pendiente de pago'}
+                ${order.status || 'Pendiente por validación'}
               </span>
             </div>
           </td>
@@ -341,7 +341,7 @@ export const sendTestEmailNotification = async (
     subtotal: 77000,
     tax: 0,
     total: 77000,
-    status: 'Pendiente de pago',
+    status: 'Pendiente por validación',
     channel: 'Web / QR'
   };
 
