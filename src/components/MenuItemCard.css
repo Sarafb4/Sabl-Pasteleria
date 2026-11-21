@@ -1,3 +1,15 @@
+/* ============================================================
+   GRILLA DE PRODUCTOS RESPONSIVE (ESCRITORIO Y MÓVIL)
+   ============================================================ */
+.menu-products-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px;
+}
+
+/* ============================================================
+   TARJETA DE PRODUCTO (VISTA ESTÁNDAR ESCRITORIO)
+   ============================================================ */
 .menu-card {
   background: #ffffff;
   border-radius: 28px;
@@ -53,6 +65,46 @@
 
 .menu-card:hover .menu-card-image {
   transform: scale(1.05);
+}
+
+.carousel-arrow-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--wine, #7B1A10);
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: bold;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 3;
+}
+.carousel-arrow-btn.left { left: 8px; }
+.carousel-arrow-btn.right { right: 8px; }
+
+.carousel-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.45);
+  padding: 3px 8px;
+  border-radius: 99px;
+  z-index: 3;
+}
+.carousel-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  cursor: pointer;
 }
 
 .menu-card-header h3 {
@@ -176,49 +228,199 @@
   transform: scale(0.97);
 }
 
+/* Ocultar elementos de móvil en escritorio */
+.mobile-card-pricing,
+.mobile-action-btn {
+  display: none;
+}
+
+/* ============================================================
+   MODAL / BOTTOM SHEET (PARA ELEGIR TAMAÑO EN MÓVIL)
+   ============================================================ */
+.product-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.product-modal-card {
+  background: #ffffff;
+  width: 100%;
+  max-width: 500px;
+  max-height: 88vh;
+  border-radius: 28px 28px 0 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
+}
+
+.product-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--wine, #7B1A10);
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.product-modal-img-wrap {
+  width: 100%;
+  height: 200px;
+  position: relative;
+  background: var(--petal, #FCE4E8);
+}
+
+.product-modal-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-badge {
+  top: 14px !important;
+  left: 14px !important;
+  right: auto !important;
+}
+
+.product-modal-body {
+  padding: 20px 20px 10px 20px;
+}
+
+.product-modal-title {
+  font-family: 'Jost', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--wine, #7B1A10);
+  margin: 0 0 6px 0;
+}
+
+.product-modal-desc {
+  font-size: 0.95rem;
+  color: #665;
+  line-height: 1.5;
+  margin: 0 0 16px 0;
+}
+
+.modal-add-btn {
+  margin-top: 10px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* ============================================================
+   ESTILOS RESPONSIVE PARA MÓVIL (OPCIÓN 3: CUADRÍCULA 2X2)
+   ============================================================ */
 @media (max-width: 600px) {
+  .menu-products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px 10px !important;
+  }
+
   .menu-card {
-    padding: 20px 16px;
-    border-radius: 22px;
+    padding: 10px !important;
+    border-radius: 18px !important;
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(123, 26, 16, 0.05) !important;
   }
 
   .menu-card-image-wrap {
-    height: 190px;
-    border-radius: 16px;
-    margin-bottom: 16px;
+    height: 120px !important;
+    border-radius: 14px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .menu-card-badge {
+    top: 6px !important;
+    right: 6px !important;
+    font-size: 0.65rem !important;
+    padding: 2px 7px !important;
+    letter-spacing: 0.02em !important;
   }
 
   .menu-card-header h3 {
-    font-size: 1.3rem;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    line-height: 1.25 !important;
+    margin-bottom: 4px !important;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.5em;
   }
 
-  .menu-card-desc {
-    font-size: 0.95rem;
-    margin-bottom: 18px;
+  /* Ocultar descripción y selector largo en la tarjeta móvil */
+  .menu-card-desc,
+  .desktop-presentations,
+  .desktop-action {
+    display: none !important;
   }
 
-  .presentation-pill {
-    padding: 10px 14px;
-    gap: 8px;
+  /* Mostrar precio y botón compacto */
+  .mobile-card-pricing {
+    display: block !important;
+    margin-top: 2px;
+    margin-bottom: 8px;
   }
 
-  .pill-label {
-    font-size: 0.95rem;
+  .mobile-price-tag {
+    font-weight: 700;
+    font-size: 0.88rem;
+    color: var(--wine, #7B1A10);
   }
 
-  .pill-portions {
+  .mobile-action-btn {
+    display: block !important;
+    margin-top: auto;
+  }
+
+  .btn-mobile-choose {
+    width: 100%;
+    background: var(--wine, #7B1A10);
+    color: var(--blush, #FFF0F3);
+    border: none;
+    padding: 7px 10px;
+    border-radius: 99px;
     font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 3px 8px rgba(123, 26, 16, 0.18);
   }
 
-  .pill-price {
-    font-size: 1rem;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .btn-add-cart {
-    padding: 14px 18px;
-    font-size: 1rem;
+  .btn-mobile-choose:active {
+    transform: scale(0.96);
   }
 }
-

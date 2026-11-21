@@ -116,11 +116,7 @@ const PostresPage: React.FC = () => {
         </div>
 
         {/* Grilla de Postres */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-          gap: '28px' 
-        }}>
+        <div className="menu-products-grid">
           {postres.map((postre) => (
             <MenuItemCard key={postre.id} item={postre} />
           ))}

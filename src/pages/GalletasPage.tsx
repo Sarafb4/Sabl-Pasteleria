@@ -116,11 +116,7 @@ const GalletasPage: React.FC = () => {
         </div>
 
         {/* Grilla de Galletas */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', 
-          gap: '28px' 
-        }}>
+        <div className="menu-products-grid">
           {galletas.map((galleta) => (
             <MenuItemCard key={galleta.id} item={galleta} />
           ))}
