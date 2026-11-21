@@ -109,14 +109,10 @@ const GalletasPage: React.FC = () => {
         </div>
 
         {/* Encabezado */}
-        <div style={{ marginBottom: '50px' }}>
-          <span className="lbl" style={{ color: 'var(--wine)', fontSize: '0.95rem' }}>Menú Oficial Sablée</span>
-          <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(3rem, 7vw, 5rem)', marginTop: '8px', marginBottom: '16px' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', margin: '0' }}>
             Nuestras Galletas
           </h1>
-          <p style={{ fontSize: '1.2rem', maxWidth: '42rem', color: '#554', lineHeight: 1.5 }}>
-            Galletas estilo New York horneadas todos los días: Nutella, Red Velvet y Oreo. Pídelas individuales ($8.000), en combo 3x ($22.000) o caja de 6x ($45.000).
-          </p>
         </div>
 
         {/* Grilla de Galletas */}

@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
 import { useOrderStore } from '../store/orderStore';
 
@@ -26,9 +27,9 @@ const CallToAction: React.FC = () => {
         Sablée Pastelería · {scheduleText}
       </p>
       <div style={{ marginTop: '20px', paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 0px))', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
-        <a href="/order-status" style={{ color: 'var(--wine)', fontWeight: 600, textDecoration: 'underline', fontSize: '0.95rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Rastrear mi Pedido</a>
-        <a href="/privacy-policy" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Política de Privacidad</a>
-        <a href="/terms" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Términos y Condiciones</a>
+        <Link to="/order-status" style={{ color: 'var(--wine)', fontWeight: 600, textDecoration: 'underline', fontSize: '0.95rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Rastrear mi Pedido</Link>
+        <Link to="/privacy-policy" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Política de Privacidad</Link>
+        <Link to="/terms" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Términos y Condiciones</Link>
       </div>
     </section>
   );

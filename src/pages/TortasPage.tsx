@@ -134,14 +134,10 @@ const TortasPage: React.FC = () => {
         </div>
 
         {/* Encabezado */}
-        <div style={{ marginBottom: '50px' }}>
-          <span className="lbl" style={{ color: 'var(--wine)', fontSize: '0.95rem' }}>Menú Oficial Sablée</span>
-          <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(3rem, 7vw, 5rem)', marginTop: '8px', marginBottom: '16px' }}>
+        <div style={{ marginBottom: '24px' }}>
+          <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', margin: '0' }}>
             Nuestras Tortas
           </h1>
-          <p style={{ fontSize: '1.2rem', maxWidth: '42rem', color: '#554', lineHeight: 1.5 }}>
-            Recetas caseras preparadas con ingredientes de alta repostería. Selecciona la presentación según el número de porciones que necesites para tu celebración.
-          </p>
         </div>
 
         {/* Grilla de Tortas */}

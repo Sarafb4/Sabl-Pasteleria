@@ -83,6 +83,11 @@ const App: React.FC = () => {
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/terminos" element={<TermsPage />} />
+        <Route path="/terminos-y-condiciones" element={<TermsPage />} />
+        <Route path="/politica-de-privacidad" element={<PrivacyPolicyPage />} />
+        <Route path="/privacidad" element={<PrivacyPolicyPage />} />
+        <Route path="/tratamiento-de-datos" element={<PrivacyPolicyPage />} />
         <Route path="*" element={<Home />} />
       </Routes>
     </>
