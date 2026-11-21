@@ -39,3 +39,55 @@ nav b{
 }
 #bag:hover{transform:scale(1.07)}
 #bag.pop{transform:scale(1.35)}
+
+.header-track-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--nb, var(--petal));
+  color: var(--nt, var(--wine));
+  border: none;
+  border-radius: 99px;
+  padding: 8px 14px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 6px 18px #440e0922;
+  transition: transform 0.25s, background 0.35s, color 0.35s;
+}
+
+@media (max-width: 600px) {
+  nav {
+    padding-top: max(10px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: 10px !important;
+    padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+  }
+  nav b {
+    padding: 6px 12px !important;
+    font-size: 1.2rem !important;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .header-track-btn {
+    padding: 7px 11px !important;
+    font-size: 0.82rem !important;
+    gap: 4px !important;
+    min-height: 38px;
+    display: inline-flex;
+    align-items: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #bag {
+    padding: 6px 12px 6px 10px !important;
+    font-size: 0.95rem !important;
+    min-height: 38px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #bag svg {
+    width: 30px !important;
+    height: 24px !important;
+  }
+}

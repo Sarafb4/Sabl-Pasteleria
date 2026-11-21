@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import { useSearchParams, Link } from 'react-router-dom';
 import { useOrderStore, Order, OrderStatus } from '../store/orderStore';
 import { useCartStore } from '../store/cartStore';
+import { fetchOrderByIdFromSupabase } from '../services/supabaseClient';
 import { 
   Search, 
   Package, 
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { checkRateLimit } from '../utils/rateLimiter';
+import { sanitizeTextInput, isSuspiciousPayload } from '../utils/validators';
 
 const STATUS_DETAILS: Record<OrderStatus, { bg: string; text: string; icon: any; desc: string }> = {
   'Pendiente por validación': {
@@ -123,8 +125,19 @@ const OrderStatusPage: React.FC = () => {
     });
 
     if (directMatches.length === 0) {
-      setCustomerOrders([]);
-      setSelectedOrderId(null);
+      // Si no está en memoria local, buscar de forma segura en Supabase por ID de pedido
+      fetchOrderByIdFromSupabase(searchTerm.trim().toUpperCase()).then(({ data }) => {
+        if (data) {
+          setCustomerOrders([data]);
+          setSelectedOrderId(data.id);
+        } else {
+          setCustomerOrders([]);
+          setSelectedOrderId(null);
+        }
+      }).catch(() => {
+        setCustomerOrders([]);
+        setSelectedOrderId(null);
+      });
       return;
     }
 
@@ -188,13 +201,19 @@ const OrderStatusPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isSuspiciousPayload(query)) {
+      toast.error('Búsqueda no permitida por razones de seguridad.');
+      return;
+    }
+
     const rateLimit = checkRateLimit('order_search', 10, 30000);
     if (!rateLimit.allowed) {
       toast.error(`Has realizado demasiadas búsquedas seguidas. Espera ${rateLimit.retryAfterSec} segundos.`);
       return;
     }
 
-    handleSearch(query, false);
+    const cleanQuery = sanitizeTextInput(query, 60);
+    handleSearch(cleanQuery, false);
   };
 
   const selectOrder = (orderId: string) => {
@@ -231,7 +250,7 @@ const OrderStatusPage: React.FC = () => {
               fontSize: '0.95rem',
               background: 'rgba(123, 26, 16, 0.06)',
               padding: '8px 18px',
-              borderRadius: '99px',
+              borderRadius: '10px',
               transition: 'background 0.2s ease'
             }}
           >
@@ -266,25 +285,26 @@ const OrderStatusPage: React.FC = () => {
           <div style={{ 
             display: 'flex', 
             background: '#ffffff', 
-            borderRadius: '99px', 
-            padding: '6px 8px 6px 20px', 
+            borderRadius: '14px', 
+            padding: '6px 8px 6px 14px', 
             boxShadow: '0 10px 30px rgba(123, 26, 16, 0.08)',
             border: '1.5px solid rgba(123, 26, 16, 0.15)',
             alignItems: 'center',
-            gap: '10px'
+            gap: '8px'
           }}>
-            <Search size={22} color="var(--wine)" style={{ opacity: 0.7 }} />
+            <Search size={20} color="var(--wine)" style={{ opacity: 0.7, flexShrink: 0 }} />
             <input 
               type="text" 
-              placeholder="Escribe tu ID (ej: SAB-1025), teléfono o correo..." 
+              placeholder="ID (SAB-1025), teléfono o correo..." 
               value={query} 
               onChange={(e) => setQuery(e.target.value)}
               style={{ 
                 flex: 1, 
+                minWidth: 0,
                 border: 'none', 
                 background: 'transparent', 
                 outline: 'none', 
-                fontSize: '1.05rem', 
+                fontSize: '16px', 
                 fontFamily: 'Jost, sans-serif',
                 color: '#333'
               }}
@@ -292,15 +312,19 @@ const OrderStatusPage: React.FC = () => {
             <button 
               type="submit"
               style={{ 
-                padding: '14px 28px', 
-                borderRadius: '99px', 
+                padding: '12px 20px', 
+                borderRadius: '10px', 
                 border: 'none', 
                 background: 'var(--wine)', 
                 color: 'var(--blush)', 
                 cursor: 'pointer', 
                 fontFamily: 'Jost, sans-serif', 
                 fontWeight: 600,
-                fontSize: '1rem',
+                fontSize: '0.98rem',
+                flexShrink: 0,
+                minHeight: '44px',
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
                 boxShadow: '0 4px 12px rgba(123, 26, 16, 0.25)',
                 transition: 'transform 0.2s ease'
               }}
@@ -392,7 +416,7 @@ const OrderStatusPage: React.FC = () => {
                           alignItems: 'center',
                           gap: '8px',
                           padding: '8px 16px',
-                          borderRadius: '99px',
+                          borderRadius: '10px',
                           border: isSelected ? '1.5px solid var(--wine)' : '1px solid rgba(123, 26, 16, 0.15)',
                           background: isSelected ? 'var(--wine)' : '#ffffff',
                           color: isSelected ? 'var(--blush)' : 'var(--wine)',
@@ -418,7 +442,7 @@ const OrderStatusPage: React.FC = () => {
                           <span style={{ 
                             fontSize: '0.72rem', 
                             padding: '2px 6px', 
-                            borderRadius: '99px', 
+                            borderRadius: '6px', 
                             background: isSelected ? 'rgba(255,255,255,0.2)' : 'rgba(123, 26, 16, 0.08)',
                             fontWeight: 700 
                           }}>
@@ -439,7 +463,7 @@ const OrderStatusPage: React.FC = () => {
                 style={{ 
                   background: '#ffffff', 
                   padding: '36px', 
-                  borderRadius: '28px', 
+                  borderRadius: '24px', 
                   boxShadow: '0 12px 36px rgba(123, 26, 16, 0.08)', 
                   border: '1px solid rgba(123, 26, 16, 0.08)',
                   marginBottom: '32px'
@@ -451,7 +475,7 @@ const OrderStatusPage: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <span className="lbl" style={{ color: '#888', fontSize: '0.8rem' }}>Número de Orden</span>
                       {customerOrders.length > 1 && (
-                        <span style={{ background: 'rgba(123, 26, 16, 0.08)', color: 'var(--wine)', fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '99px' }}>
+                        <span style={{ background: 'rgba(123, 26, 16, 0.08)', color: 'var(--wine)', fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: '6px' }}>
                           {activeOrder.id === customerOrders[0].id ? 'Pedido más reciente' : 'Pedido seleccionado'}
                         </span>
                       )}
@@ -476,13 +500,13 @@ const OrderStatusPage: React.FC = () => {
                       background: statusCfg.bg, 
                       border: `1.5px solid ${statusCfg.text}30`, 
                       padding: '20px 24px', 
-                      borderRadius: '20px', 
+                      borderRadius: '16px', 
                       marginBottom: '24px',
                       display: 'flex',
                       alignItems: 'flex-start',
                       gap: '14px'
                     }}>
-                      <div style={{ background: '#fff', borderRadius: '50%', padding: '9px', display: 'flex', color: statusCfg.text, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
+                      <div style={{ background: '#fff', borderRadius: '10px', padding: '9px', display: 'flex', color: statusCfg.text, boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
                         <StatusIcon size={24} />
                       </div>
                       <div style={{ flex: 1 }}>
@@ -490,7 +514,7 @@ const OrderStatusPage: React.FC = () => {
                           <span style={{ fontSize: '0.85rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: statusCfg.text }}>
                             Estado Actual
                           </span>
-                          <span style={{ background: statusCfg.text, color: '#fff', padding: '3px 12px', borderRadius: '99px', fontSize: '0.85rem', fontWeight: 700 }}>
+                          <span style={{ background: statusCfg.text, color: '#fff', padding: '3px 12px', borderRadius: '6px', fontSize: '0.85rem', fontWeight: 700 }}>
                             {activeOrder.status}
                           </span>
                         </div>
@@ -514,7 +538,7 @@ const OrderStatusPage: React.FC = () => {
                                 background: 'var(--wine, #7B1A10)',
                                 color: 'var(--blush, #FFF0F3)',
                                 padding: '10px 22px',
-                                borderRadius: '99px',
+                                borderRadius: '10px',
                                 border: 'none',
                                 fontSize: '0.92rem',
                                 fontWeight: 700,
@@ -537,7 +561,7 @@ const OrderStatusPage: React.FC = () => {
                                 color: '#991b1b',
                                 border: '1.5px solid #991b1b',
                                 padding: '10px 18px',
-                                borderRadius: '99px',
+                                borderRadius: '10px',
                                 fontSize: '0.92rem',
                                 fontWeight: 700,
                                 textDecoration: 'none',
@@ -613,7 +637,7 @@ const OrderStatusPage: React.FC = () => {
                       color: 'var(--wine)',
                       border: '1.5px solid var(--wine)',
                       padding: '10px 22px',
-                      borderRadius: '99px',
+                      borderRadius: '10px',
                       fontSize: '0.9rem',
                       fontWeight: 600,
                       textDecoration: 'none'
@@ -651,7 +675,7 @@ const OrderStatusPage: React.FC = () => {
                         key={order.id}
                         style={{
                           background: '#ffffff',
-                          borderRadius: '22px',
+                          borderRadius: '20px',
                           padding: '24px',
                           border: '1px solid rgba(123, 26, 16, 0.1)',
                           boxShadow: '0 4px 16px rgba(123, 26, 16, 0.04)',
@@ -677,7 +701,7 @@ const OrderStatusPage: React.FC = () => {
                             background: statusCfg.bg,
                             color: statusCfg.text,
                             padding: '6px 14px',
-                            borderRadius: '99px',
+                            borderRadius: '6px',
                             fontWeight: 700,
                             fontSize: '0.85rem',
                             border: `1px solid ${statusCfg.text}30`
@@ -728,7 +752,7 @@ const OrderStatusPage: React.FC = () => {
                                 color: 'var(--wine)',
                                 border: '1.5px solid var(--wine)',
                                 padding: '8px 18px',
-                                borderRadius: '99px',
+                                borderRadius: '10px',
                                 fontSize: '0.88rem',
                                 fontWeight: 600,
                                 cursor: 'pointer',
@@ -753,7 +777,7 @@ const OrderStatusPage: React.FC = () => {
                                 color: 'var(--blush)',
                                 border: 'none',
                                 padding: '8px 18px',
-                                borderRadius: '99px',
+                                borderRadius: '10px',
                                 fontSize: '0.88rem',
                                 fontWeight: 700,
                                 cursor: 'pointer',
@@ -798,9 +822,10 @@ const OrderStatusPage: React.FC = () => {
                 background: 'var(--wine)', 
                 color: 'var(--blush)', 
                 padding: '12px 28px', 
-                borderRadius: '99px', 
+                borderRadius: '10px', 
                 textDecoration: 'none', 
-                fontWeight: 600 
+                fontWeight: 600,
+                boxShadow: '0 4px 12px rgba(123, 26, 16, 0.2)'
               }}
             >
               Ir a la tienda

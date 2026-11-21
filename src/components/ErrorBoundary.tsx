@@ -1,4 +1,4 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { RefreshCw, Home, MessageCircle, AlertTriangle } from 'lucide-react';
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
 
 interface State {
   hasError: boolean;
+  error?: Error | null;
 }
 
 /**
@@ -17,11 +18,12 @@ interface State {
  */
 export class ErrorBoundary extends Component<Props, State> {
   public state: State = {
-    hasError: false
+    hasError: false,
+    error: null
   };
 
-  public static getDerivedStateFromError(_: Error): State {
-    return { hasError: true };
+  public static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -93,6 +95,35 @@ export class ErrorBoundary extends Component<Props, State> {
               No te preocupes, tus productos y pedidos están a salvo. Puedes intentar recargar la página o comunicarte directamente con nosotras para ayudarte de inmediato.
             </p>
 
+            {this.state.error && (
+              <details style={{
+                marginBottom: '24px',
+                textAlign: 'left',
+                background: '#fef2f2',
+                padding: '12px 16px',
+                borderRadius: '14px',
+                border: '1px solid #fecaca',
+                fontSize: '0.82rem',
+                color: '#991b1b',
+                maxWidth: '460px',
+                margin: '0 auto 24px'
+              }}>
+                <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
+                  Detalle técnico: {this.state.error.message || 'Error inesperado'}
+                </summary>
+                <pre style={{
+                  marginTop: '8px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-all',
+                  fontSize: '0.74rem',
+                  fontFamily: 'monospace',
+                  color: '#7f1d1d'
+                }}>
+                  {this.state.error.stack || this.state.error.message}
+                </pre>
+              </details>
+            )}
+
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -147,7 +178,7 @@ export class ErrorBoundary extends Component<Props, State> {
               </button>
 
               <a
-                href="https://wa.me/573125473848?text=Hola%20Sabl%C3%A9e%20Pasteler%C3%ADa%20%F0%9F%8D%B0%2C%20tuve%20un%20inconveniente%20en%20la%20p%C3%A1gina%20y%20quisiera%20ayuda%20con%20mi%20pedido."
+                href={`https://wa.me/${(typeof window !== 'undefined' ? localStorage.getItem('sablee_bakery_phone') : null) || '573125473848'}?text=${encodeURIComponent('Hola Sablée Pastelería, tuve un inconveniente en la página y quisiera ayuda con mi pedido.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -165,7 +196,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 }}
               >
                 <MessageCircle size={16} />
-                <span>Escríbenos a WhatsApp (312 547 3848)</span>
+                <span>Escríbenos a WhatsApp</span>
               </a>
             </div>
           </div>

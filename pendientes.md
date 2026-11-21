@@ -9,10 +9,10 @@ A continuación se detalla la lista de tareas organizadas por secciones para pon
 - [x] Mover los estilos CSS y variables globales a un archivo organizado o adoptar módulos CSS / Tailwind.
 
 ## 2. Sistema de Productos
-- [ ] Crear un arreglo o base de datos de productos (ej. cookies, pasteles, postres).
-- [ ] Renderizar dinámicamente las tarjetas de productos en la página principal utilizando los datos.
-- [ ] Implementar un componente interactivo para ver los detalles de cada producto (`Cookie.tsx`).
-- [ ] Añadir filtrado y búsqueda de productos por categorías.
+- [x] Crear un arreglo o base de datos de productos (ej. cookies, pasteles, postres).
+- [x] Renderizar dinámicamente las tarjetas de productos en la página principal utilizando los datos.
+- [x] Implementar un componente interactivo para ver los detalles de cada producto (`MenuItemCard.tsx`).
+- [x] Añadir filtrado y páginas dedicadas por categorías (`/tortas`, `/galletas`, `/postres`).
 
 ## 3. Carrito de Compras
 - [x] Implementar la lógica del estado global para el carrito (Context API, Redux o Zustand).
@@ -31,7 +31,7 @@ A continuación se detalla la lista de tareas organizadas por secciones para pon
 ## 5. Backend y Base de Datos (Opcional pero Recomendado)
 - [x] Crear esquema SQL completo con políticas de seguridad por fila (Row Level Security - RLS) en `supabase_schema_and_rls.sql`.
 - [x] Configurar cliente seguro de Supabase con variables de entorno (`src/services/supabaseClient.ts`).
-- [ ] Conectar la sincronización de órdenes y productos entre Zustand y Supabase.
+- [x] Conectar la sincronización de órdenes y productos entre Zustand y Supabase.
 
 ## 6. Animaciones y Experiencia de Usuario (UX)
 - [x] Mantener y mejorar las micro-animaciones existentes (ej. el efecto *hover* en los botones y tarjetas).

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import Home from './pages/Home';
@@ -13,13 +13,25 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
 import CartSidebar from './components/CartSidebar';
 import ScrollToTop from './components/ScrollToTop';
+import CookieBanner from './components/CookieBanner';
+import { useMenuStore } from './store/menuStore';
+import { useOrderStore } from './store/orderStore';
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Sincronizar catálogo y pedidos con Supabase en segundo plano al abrir la pastelería
+    useMenuStore.getState().syncWithSupabase();
+    useOrderStore.getState().syncWithSupabase();
+  }, []);
+
   return (
     <>
       <ScrollToTop />
       <Toaster 
         position="bottom-center"
+        containerStyle={{
+          bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))',
+        }}
         toastOptions={{
           duration: 3500,
           style: {
@@ -55,6 +67,7 @@ const App: React.FC = () => {
         }}
       />
       <CartSidebar />
+      <CookieBanner />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/tortas" element={<TortasPage />} />
@@ -65,6 +78,7 @@ const App: React.FC = () => {
         <Route path="/cupcakes" element={<PostresPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/pago" element={<PaymentPage />} />
         <Route path="/order-status" element={<OrderStatusPage />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />

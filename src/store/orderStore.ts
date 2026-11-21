@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 import { EmailConfig, DEFAULT_EMAIL_CONFIG, sendOrderEmailNotification } from '../services/emailService';
+import {
+  saveOrderToSupabase,
+  fetchOrdersFromSupabase,
+  updateOrderStatusInSupabase,
+  attachReceiptInSupabase,
+  deleteOrderInSupabase,
+  isSupabaseConfigured
+} from '../services/supabaseClient';
 
 export interface OrderItem {
   id: string;
@@ -31,6 +39,13 @@ export interface Order {
   status: OrderStatus;
   receiptUrl?: string;
   channel: 'Web / QR' | 'WhatsApp';
+  termsAccepted?: boolean;
+  termsAcceptedAt?: string;
+  privacyAccepted?: boolean;
+  privacyAcceptedAt?: string;
+  dataConsentAccepted?: boolean;
+  dataConsentAt?: string;
+  cookieConsentAt?: string;
 }
 
 export const playOrderChime = () => {
@@ -110,6 +125,8 @@ interface OrderStore {
   adminPassword: string;
   schedule: BakerySchedule;
   emailConfig: EmailConfig;
+  isSyncing: boolean;
+  syncWithSupabase: () => Promise<void>;
   setBakeryPhone: (phone: string) => void;
   login: (pin: string) => boolean;
   logout: () => void;
@@ -221,12 +238,50 @@ const INITIAL_ORDERS: Order[] = [
 ];
 
 export const useOrderStore = create<OrderStore>((set, get) => {
-  // Cargar órdenes previas o usar iniciales (migrando cualquier estado anterior a 'Pendiente por validación')
-  const savedOrders = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEY) : null;
-  const rawOrders: Order[] = savedOrders ? JSON.parse(savedOrders) : INITIAL_ORDERS;
-  const initialOrders: Order[] = rawOrders.map(o => 
-    (o.status as string) === 'Pendiente de pago' ? { ...o, status: 'Pendiente por validación' as OrderStatus } : o
-  );
+  // Cargar órdenes previas o usar iniciales con protección total contra JSON corrupto
+  const loadInitialOrders = (): Order[] => {
+    if (typeof window === 'undefined') return INITIAL_ORDERS;
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return INITIAL_ORDERS;
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((o: any) => {
+          if (!o || typeof o !== 'object') return null;
+          return {
+            ...o,
+            id: String(o.id || `SAB-${Math.floor(1000 + Math.random() * 9000)}`),
+            customer: o.customer && typeof o.customer === 'object' ? {
+              name: String(o.customer.name || 'Cliente'),
+              phone: String(o.customer.phone || '3125473848'),
+              email: String(o.customer.email || ''),
+              address: String(o.customer.address || 'Recoge en Tienda'),
+              details: o.customer.details ? String(o.customer.details) : '',
+              city: String(o.customer.city || 'Bucaramanga'),
+              notes: o.customer.notes ? String(o.customer.notes) : ''
+            } : {
+              name: 'Cliente',
+              phone: '3125473848',
+              email: '',
+              address: 'Bucaramanga',
+              city: 'Bucaramanga'
+            },
+            items: Array.isArray(o.items) ? o.items : [],
+            subtotal: Number(o.subtotal) || Number(o.total) || 0,
+            tax: Number(o.tax) || 0,
+            total: Number(o.total) || 0,
+            status: (o.status === 'Pendiente de pago' ? 'Pendiente por validación' : (o.status || 'Pendiente por validación')) as OrderStatus,
+            channel: (o.channel || 'Web / QR') as any
+          };
+        }).filter(Boolean) as Order[];
+      }
+    } catch (e) {
+      console.warn('Error cargando pedidos desde localStorage:', e);
+    }
+    return INITIAL_ORDERS;
+  };
+
+  const initialOrders: Order[] = loadInitialOrders();
   // Validación segura de sesión con expiración automática
   const checkInitialAuth = (): boolean => {
     if (typeof window === 'undefined') return false;
@@ -257,11 +312,13 @@ export const useOrderStore = create<OrderStore>((set, get) => {
       const saved = localStorage.getItem(SCHEDULE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { 
-          ...DEFAULT_SCHEDULE, 
-          ...parsed,
-          days: Array.isArray(parsed.days) && parsed.days.length > 0 ? parsed.days : DEFAULT_DAYS
-        };
+        if (parsed && typeof parsed === 'object') {
+          return { 
+            ...DEFAULT_SCHEDULE, 
+            ...parsed,
+            days: Array.isArray(parsed.days) && parsed.days.length > 0 ? parsed.days : DEFAULT_DAYS
+          };
+        }
       }
     } catch {
       // fallback
@@ -274,7 +331,12 @@ export const useOrderStore = create<OrderStore>((set, get) => {
     if (typeof window === 'undefined') return DEFAULT_EMAIL_CONFIG;
     try {
       const saved = localStorage.getItem(EMAIL_CONFIG_KEY);
-      if (saved) return { ...DEFAULT_EMAIL_CONFIG, ...JSON.parse(saved) };
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object') {
+          return { ...DEFAULT_EMAIL_CONFIG, ...parsed };
+        }
+      }
     } catch {
       // fallback
     }
@@ -284,7 +346,21 @@ export const useOrderStore = create<OrderStore>((set, get) => {
 
   const saveOrders = (orders: Order[]) => {
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+      } catch (quotaError) {
+        console.warn('Límite de localStorage alcanzado. Guardando pedidos optimizados sin imágenes pesadas:', quotaError);
+        try {
+          // Guardar sin los base64 pesados de comprobantes para evitar fallos de cuota en el navegador
+          const optimized = orders.map(o => ({
+            ...o,
+            receiptUrl: (o.receiptUrl && o.receiptUrl.length > 500) ? 'receipt_stored' : o.receiptUrl
+          }));
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(optimized));
+        } catch {
+          // Si la cuota sigue saturada, los pedidos se mantienen en el estado en memoria de Zustand
+        }
+      }
     }
   };
 
@@ -301,6 +377,31 @@ export const useOrderStore = create<OrderStore>((set, get) => {
     adminPassword: savedPassword,
     schedule: initialSchedule,
     emailConfig: initialEmailConfig,
+    isSyncing: false,
+
+    syncWithSupabase: async () => {
+      if (!isSupabaseConfigured()) return;
+      set({ isSyncing: true });
+      try {
+        const { data: remoteOrders, error } = await fetchOrdersFromSupabase();
+        if (!error && Array.isArray(remoteOrders)) {
+          // Fusionar pedidos locales con remotos sin duplicar
+          const localOrders = get().orders;
+          const remoteIds = new Set(remoteOrders.map(o => o.id));
+          
+          // Mantener locales recién creados que aún no estén en remoto
+          const uniqueLocals = localOrders.filter(l => !remoteIds.has(l.id));
+          const merged = [...uniqueLocals, ...remoteOrders];
+
+          saveOrders(merged);
+          set({ orders: merged });
+        }
+      } catch (e) {
+        console.warn('Error sincronizando con Supabase:', e);
+      } finally {
+        set({ isSyncing: false });
+      }
+    },
 
     setBakeryPhone: (phone: string) => {
       const sanitized = sanitizePhone(phone);
@@ -386,10 +487,31 @@ export const useOrderStore = create<OrderStore>((set, get) => {
 
     createOrder: (orderData) => {
       const newId = `SAB-${Math.floor(1000 + Math.random() * 9000)}`;
+      const nowIso = new Date().toISOString();
+      
+      // Obtener fecha de aceptación de cookies si existe en este dispositivo
+      let cookieConsentAt: string | undefined = undefined;
+      if (typeof window !== 'undefined') {
+        try {
+          const cookieRaw = localStorage.getItem('sablee_cookies_accepted');
+          if (cookieRaw) {
+            const parsed = JSON.parse(cookieRaw);
+            cookieConsentAt = parsed.timestamp;
+          }
+        } catch {}
+      }
+
       const newOrder: Order = {
         ...orderData,
         id: newId,
-        date: new Date().toLocaleString('es-CO')
+        date: new Date().toLocaleString('es-CO'),
+        termsAccepted: orderData.termsAccepted !== false,
+        termsAcceptedAt: orderData.termsAcceptedAt || nowIso,
+        privacyAccepted: orderData.privacyAccepted !== false,
+        privacyAcceptedAt: orderData.privacyAcceptedAt || nowIso,
+        dataConsentAccepted: orderData.dataConsentAccepted !== false,
+        dataConsentAt: orderData.dataConsentAt || nowIso,
+        cookieConsentAt: orderData.cookieConsentAt || cookieConsentAt
       };
 
       const updated = [newOrder, ...get().orders];
@@ -416,6 +538,11 @@ export const useOrderStore = create<OrderStore>((set, get) => {
         `/admin`
       );
 
+      // Guardar de forma asíncrona y segura en Supabase (con encriptación TLS)
+      saveOrderToSupabase(newOrder).catch(err => {
+        console.warn('Respaldo en Supabase falló, orden preservada localmente:', err);
+      });
+
       // Opción 2: Correo electrónico automático al celular de la dueña (EmailJS)
       sendOrderEmailNotification(newOrder, get().emailConfig).catch(err => {
         console.warn('Alerta EmailJS en segundo plano:', err);
@@ -428,6 +555,11 @@ export const useOrderStore = create<OrderStore>((set, get) => {
       const updated = get().orders.map(o => o.id === id ? { ...o, status } : o);
       saveOrders(updated);
       set({ orders: updated });
+
+      // Actualizar en Supabase
+      updateOrderStatusInSupabase(id, status).catch(err => {
+        console.warn('Error sincronizando estado con Supabase:', err);
+      });
     },
 
     attachReceipt: (id, receiptBase64) => {
@@ -442,13 +574,30 @@ export const useOrderStore = create<OrderStore>((set, get) => {
         `El cliente subió su comprobante de pago. Pendiente por validación.`,
         `/admin`
       );
+
+      // Guardar comprobante en Supabase
+      attachReceiptInSupabase(id, receiptBase64).catch(err => {
+        console.warn('Error subiendo comprobante a Supabase:', err);
+      });
     },
 
     deleteOrder: (id) => {
       const updated = get().orders.filter(o => o.id !== id);
       saveOrders(updated);
       set({ orders: updated });
+
+      // Eliminar en Supabase
+      deleteOrderInSupabase(id).catch(err => {
+        console.warn('Error eliminando pedido en Supabase:', err);
+      });
     }
   };
 });
+
+// Sincronización automática no bloqueante en segundo plano al iniciar
+if (typeof window !== 'undefined' && isSupabaseConfigured()) {
+  setTimeout(() => {
+    useOrderStore.getState().syncWithSupabase();
+  }, 800);
+}
 

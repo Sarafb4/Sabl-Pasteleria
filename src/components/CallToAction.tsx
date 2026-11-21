@@ -18,17 +18,17 @@ const CallToAction: React.FC = () => {
       <h2 id="h3" className="d" style={{ fontSize: 'clamp(3.4rem,13vw,10rem)' }}>¿Hambre?</h2>
       <button 
         onClick={toggleCart}
-        style={{ background: 'var(--wine)', color: 'var(--blush)', fontSize: '1.5rem', padding: '20px 60px', marginTop: '40px', cursor: 'pointer' }}
+        style={{ background: 'var(--wine)', color: 'var(--blush)', fontSize: '1.5rem', padding: '20px 60px', minHeight: '56px', marginTop: '40px', cursor: 'pointer', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
       >
         Pedir
       </button>
       <p className="lbl" style={{ marginTop: '80px', fontSize: '.95rem', textTransform: 'uppercase' }}>
         Sablée Pastelería · {scheduleText}
       </p>
-      <div style={{ marginTop: '20px', paddingBottom: '40px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
-        <a href="/order-status" style={{ color: 'var(--wine)', fontWeight: 600, textDecoration: 'underline', fontSize: '0.95rem' }}>Rastrear mi Pedido</a>
-        <a href="/privacy-policy" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem' }}>Política de Privacidad</a>
-        <a href="/terms" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem' }}>Términos y Condiciones</a>
+      <div style={{ marginTop: '20px', paddingBottom: 'calc(40px + env(safe-area-inset-bottom, 0px))', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        <a href="/order-status" style={{ color: 'var(--wine)', fontWeight: 600, textDecoration: 'underline', fontSize: '0.95rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Rastrear mi Pedido</a>
+        <a href="/privacy-policy" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Política de Privacidad</a>
+        <a href="/terms" style={{ color: 'var(--wine)', textDecoration: 'underline', fontSize: '0.9rem', padding: '10px 12px', display: 'inline-block', touchAction: 'manipulation' }}>Términos y Condiciones</a>
       </div>
     </section>
   );

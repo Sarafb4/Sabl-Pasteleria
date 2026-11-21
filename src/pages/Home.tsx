@@ -6,7 +6,8 @@ import Marquee from '../components/Marquee';
 import QuoteCakeSection from '../components/QuoteCakeSection';
 import IngredientsSection from '../components/IngredientsSection';
 import CallToAction from '../components/CallToAction';
-import { Cake, Dessert, Cookie } from 'lucide-react';
+import { Dessert, Cookie } from 'lucide-react';
+import CakeIcon from '../components/CakeIcon';
 
 const PRODUCTS = [
   {
@@ -17,7 +18,7 @@ const PRODUCTS = [
     color: "var(--blush)",
     label: "Tortas.",
     href: "/tortas",
-    icon: <Cake size={24} strokeWidth={2.4} color="#7B1A10" />
+    icon: <CakeIcon size={24} strokeWidth={2.4} color="#7B1A10" />
   },
   {
     name: "Galletas",

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
-import { User, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import './Header.css';
 
 interface HeaderProps {
@@ -52,51 +52,15 @@ const Header: React.FC<HeaderProps> = ({ isPop: propIsPop }) => {
         <b><i className="lg" role="img" aria-label="Sablée Pastelería"></i></b>
       </Link>
       
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <Link 
           to="/order-status" 
+          className="header-track-btn"
           aria-label="Rastrear Pedido"
           title="Rastrear Pedido por ID, Teléfono o Correo"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            background: 'var(--nb, var(--petal))',
-            color: 'var(--nt, var(--wine))',
-            border: 'none',
-            borderRadius: '99px',
-            padding: '9px 16px',
-            fontSize: '0.95rem',
-            fontWeight: 600,
-            textDecoration: 'none',
-            boxShadow: '0 6px 18px #440e0922',
-            transition: 'transform 0.25s, background 0.35s, color 0.35s'
-          }}
         >
-          <Search size={17} />
-          <span>Rastrear</span>
-        </Link>
-
-        <Link 
-          to="/admin" 
-          aria-label="Panel de Administración"
-          title="Panel de Administración"
-          style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'var(--nb, var(--petal))',
-            color: 'var(--nt, var(--wine))',
-            border: 'none',
-            borderRadius: '99px',
-            width: '42px',
-            height: '42px',
-            textDecoration: 'none',
-            boxShadow: '0 6px 18px #440e0922',
-            transition: 'transform 0.25s, background 0.35s, color 0.35s'
-          }}
-        >
-          <User size={20} />
+          <Search size={16} />
+          <span className="track-text">Rastrear</span>
         </Link>
 
         <button 

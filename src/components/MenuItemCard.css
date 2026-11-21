@@ -103,6 +103,9 @@
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
+  min-height: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .presentation-pill:hover {
@@ -157,6 +160,9 @@
   justify-content: center;
   gap: 10px;
   cursor: pointer;
+  min-height: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition: transform 0.2s ease, background 0.2s ease;
   box-shadow: 0 6px 18px rgba(123, 26, 16, 0.2);
 }
@@ -168,5 +174,51 @@
 
 .btn-add-cart:active {
   transform: scale(0.97);
+}
+
+@media (max-width: 600px) {
+  .menu-card {
+    padding: 20px 16px;
+    border-radius: 22px;
+  }
+
+  .menu-card-image-wrap {
+    height: 190px;
+    border-radius: 16px;
+    margin-bottom: 16px;
+  }
+
+  .menu-card-header h3 {
+    font-size: 1.3rem;
+  }
+
+  .menu-card-desc {
+    font-size: 0.95rem;
+    margin-bottom: 18px;
+  }
+
+  .presentation-pill {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .pill-label {
+    font-size: 0.95rem;
+  }
+
+  .pill-portions {
+    font-size: 0.8rem;
+  }
+
+  .pill-price {
+    font-size: 1rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .btn-add-cart {
+    padding: 14px 18px;
+    font-size: 1rem;
+  }
 }
 

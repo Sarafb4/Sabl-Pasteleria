@@ -1,13 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Cake, MessageCircle, Calendar, Heart, Layers, Palette, Cookie, ChevronDown, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { MessageCircle, Calendar, Heart, Layers, Palette, Cookie, ChevronDown, Check, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import CakeIcon from './CakeIcon';
 import { useOrderStore } from '../store/orderStore';
 import toast from 'react-hot-toast';
 import { checkRateLimit } from '../utils/rateLimiter';
-import { validateName, validatePhone } from '../utils/validators';
+import { 
+  validateName, 
+  validatePhone, 
+  sanitizeTextInput, 
+  sanitizeMultilineInput, 
+  isSuspiciousPayload 
+} from '../utils/validators';
 import './QuoteCakeSection.css';
 
 const PRODUCT_TYPES: Array<{ id: string; label: string; icon: any }> = [
-  { id: 'Torta artesanal', label: 'Torta artesanal', icon: Cake },
+  { id: 'Torta artesanal', label: 'Torta artesanal', icon: CakeIcon },
   { id: 'Galletas decoradas', label: 'Galletas decoradas', icon: Cookie },
   { id: 'Otro postre personalizado', label: 'Otro tipo de postre (Cupcakes, etc.)', icon: null }
 ];
@@ -470,6 +477,10 @@ const QuoteCakeSection: React.FC = () => {
   const [clientPhone, setClientPhone] = useState('');
   const [notes, setNotes] = useState('');
 
+  // Protección anti-bot: campo trampa honeypot y timer de llenado
+  const [botHoneypot, setBotHoneypot] = useState('');
+  const formMountTime = useRef<number>(Date.now());
+
   const currentSizes = SIZES_BY_TYPE[productType] || SIZES_BY_TYPE['Torta artesanal'];
 
   const handleProductTypeSelect = (typeId: string) => {
@@ -494,44 +505,82 @@ const QuoteCakeSection: React.FC = () => {
   const handleSendToWhatsApp = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // 1. Detección de bots automatizados vía campo trampa Honeypot
+    if (botHoneypot.trim() !== '') {
+      return;
+    }
+
+    // 2. Detección de bots de velocidad ultra-rápida (< 1.2s)
+    if (Date.now() - formMountTime.current < 1200) {
+      toast.error('Por favor tómate un momento para revisar los detalles de tu cotización.');
+      return;
+    }
+
+    // 3. Verificación de cargas maliciosas (Anti-XSS / Inyecciones)
+    const inputsToCheck = [
+      clientName,
+      clientPhone,
+      notes,
+      customDessert,
+      customFlavor,
+      customFilling,
+      customSize,
+      customStyle
+    ];
+    if (inputsToCheck.some(val => isSuspiciousPayload(val))) {
+      toast.error('Se detectaron caracteres o secuencias de texto no permitidas por motivos de seguridad.');
+      return;
+    }
+
+    // 4. Rate limiting para evitar saturación (máx 3 cotizaciones por minuto)
     const rateLimit = checkRateLimit('quote_cake', 3, 60000);
     if (!rateLimit.allowed) {
       toast.error(`Por favor espera ${rateLimit.retryAfterSec} segundos antes de enviar otra cotización.`);
       return;
     }
 
-    const nameValidation = validateName(clientName);
+    // 5. Sanitización limpia de entradas
+    const cleanClientName = sanitizeTextInput(clientName, 70);
+    const cleanClientPhone = sanitizeTextInput(clientPhone, 20);
+    const cleanNotes = sanitizeMultilineInput(notes, 400);
+    const cleanCustomDessert = sanitizeTextInput(customDessert, 80);
+    const cleanCustomFlavor = sanitizeTextInput(customFlavor, 80);
+    const cleanCustomFilling = sanitizeTextInput(customFilling, 80);
+    const cleanCustomSize = sanitizeTextInput(customSize, 80);
+    const cleanCustomStyle = sanitizeTextInput(customStyle, 80);
+
+    const nameValidation = validateName(cleanClientName);
     if (!nameValidation.isValid) {
       toast.error(nameValidation.error || 'Por favor ingresa un nombre válido.');
       return;
     }
 
-    if (clientPhone.trim()) {
-      const phoneValidation = validatePhone(clientPhone);
+    if (cleanClientPhone.trim()) {
+      const phoneValidation = validatePhone(cleanClientPhone);
       if (!phoneValidation.isValid) {
         toast.error(phoneValidation.error || 'Por favor ingresa un teléfono celular válido.');
         return;
       }
     }
 
-    const resolvedTitle = productType === 'Otro postre personalizado' && customDessert.trim()
-      ? `Postre Personalizado (${customDessert.trim()})`
+    const resolvedTitle = productType === 'Otro postre personalizado' && cleanCustomDessert.trim()
+      ? `Postre Personalizado (${cleanCustomDessert.trim()})`
       : productType;
 
-    const resolvedFlavor = flavor === 'O cotízala a tu antojo' && customFlavor.trim() 
-      ? `A tu antojo: ${customFlavor.trim()}` 
+    const resolvedFlavor = flavor === 'O cotízala a tu antojo' && cleanCustomFlavor.trim() 
+      ? `A tu antojo: ${cleanCustomFlavor.trim()}` 
       : flavor;
 
-    const resolvedFilling = filling === 'O cotízala a tu antojo' && customFilling.trim()
-      ? `A tu antojo: ${customFilling.trim()}`
+    const resolvedFilling = filling === 'O cotízala a tu antojo' && cleanCustomFilling.trim()
+      ? `A tu antojo: ${cleanCustomFilling.trim()}`
       : filling;
 
-    const resolvedSize = size.includes('antojo') && customSize.trim()
-      ? `A tu antojo: ${customSize.trim()}`
+    const resolvedSize = size.includes('antojo') && cleanCustomSize.trim()
+      ? `A tu antojo: ${cleanCustomSize.trim()}`
       : `${size} (${selectedSizeDesc})`;
 
-    const resolvedStyle = cakeStyle === 'O cotízala a tu antojo' && customStyle.trim()
-      ? `A tu antojo: ${customStyle.trim()}`
+    const resolvedStyle = cakeStyle === 'O cotízala a tu antojo' && cleanCustomStyle.trim()
+      ? `A tu antojo: ${cleanCustomStyle.trim()}`
       : cakeStyle;
 
     const message = 
@@ -544,9 +593,9 @@ Me gustaría cotizar un pedido personalizado de *${resolvedTitle}* con las sigui
 👥 *Tamaño / Cantidad:* ${resolvedSize}
 🎨 *Estilo de Decoración:* ${resolvedStyle}
 📅 *Fecha del Evento:* ${eventDate || 'A convenir'}
-👤 *Nombre:* ${clientName}
-📱 *Teléfono:* ${clientPhone || 'No especificado'}
-${notes.trim() ? `📝 *Ideas / Detalles:* ${notes.trim()}\n` : ''}
+👤 *Nombre:* ${cleanClientName}
+📱 *Teléfono:* ${cleanClientPhone || 'No especificado'}
+${cleanNotes.trim() ? `📝 *Ideas / Detalles:* ${cleanNotes.trim()}\n` : ''}
 ¿Tienen disponibilidad en agenda y cuál sería la cotización estimada? ¡Quedo atento(a)!`;
 
     const encodedMsg = encodeURIComponent(message);
@@ -599,6 +648,17 @@ ${notes.trim() ? `📝 *Ideas / Detalles:* ${notes.trim()}\n` : ''}
           {/* Tarjeta del Formulario Ordenado */}
           <div className="quote-form-card">
             <form onSubmit={handleSendToWhatsApp}>
+              {/* Campo trampa Honeypot anti-spam (invisible para humanos, atrapa bots) */}
+              <div style={{ display: 'none', position: 'absolute', left: '-9999px', opacity: 0 }} aria-hidden="true">
+                <input
+                  type="text"
+                  name="pasteleria_contact_channel_hp"
+                  value={botHoneypot}
+                  onChange={(e) => setBotHoneypot(e.target.value)}
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
               
               {/* Paso 1: Tipo de creación (Segmentado limpio) */}
               <div style={{ marginBottom: '22px' }}>
@@ -657,7 +717,7 @@ ${notes.trim() ? `📝 *Ideas / Detalles:* ${notes.trim()}\n` : ''}
                 <div>
                   <LuxurySelect
                     label={`2. ${getFlavorLabel()}`}
-                    icon={Cake}
+                    icon={CakeIcon}
                     value={flavor}
                     options={FLAVORS.map(f => ({ value: f, label: f }))}
                     onChange={(val) => setFlavor(val)}
@@ -749,7 +809,7 @@ ${notes.trim() ? `📝 *Ideas / Detalles:* ${notes.trim()}\n` : ''}
                     <input
                       type="text"
                       required
-                      placeholder="Ej. Laura Morales"
+                      placeholder="Ej. Nombre y Apellido"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
                     />
@@ -759,7 +819,7 @@ ${notes.trim() ? `📝 *Ideas / Detalles:* ${notes.trim()}\n` : ''}
                     <label>Teléfono WhatsApp</label>
                     <input
                       type="tel"
-                      placeholder="Ej. +57 310 000 0000"
+                      placeholder="000 000 0000"
                       value={clientPhone}
                       onChange={(e) => setClientPhone(e.target.value)}
                     />

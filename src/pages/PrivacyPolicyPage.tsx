@@ -57,6 +57,11 @@ const PrivacyPolicyPage: React.FC = () => {
             <p style={{ marginBottom: '20px' }}>
               Tienes derecho a acceder, corregir o solicitar la eliminación de tus datos personales de nuestra base de datos en cualquier momento. Para ejercer estos derechos, contáctanos a través de nuestro correo o WhatsApp de atención al cliente.
             </p>
+
+            <h2 className="d" style={{ fontSize: '2rem', marginTop: '40px', marginBottom: '15px' }}>6. Cookies Técnicas y Esenciales</h2>
+            <p style={{ marginBottom: '20px' }}>
+              En <strong>Sablée Pastelería</strong> utilizamos únicamente almacenamiento local y cookies técnicas estrictamente necesarias para el funcionamiento del sitio web (guardar tus productos en la bolsa de compras, recordar el código de seguimiento de tu pedido y asegurar tus transacciones). No empleamos cookies invasivas de seguimiento ni publicidad dirigida de terceros.
+            </p>
           </div>
         </div>
       </div>

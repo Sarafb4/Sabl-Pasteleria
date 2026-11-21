@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import Header from '../components/Header';
 import MenuItemCard from '../components/MenuItemCard';
 import { useMenuStore } from '../store/menuStore';
-import { Cake, Dessert, Cookie, ArrowLeft } from 'lucide-react';
+import { Dessert, Cookie, ArrowLeft } from 'lucide-react';
+import CakeIcon from '../components/CakeIcon';
 
 const GalletasPage: React.FC = () => {
   const items = useMenuStore(state => state.items);
@@ -12,10 +13,10 @@ const GalletasPage: React.FC = () => {
     <div style={{ background: 'var(--blush)', minHeight: '100vh', color: 'var(--wine)', paddingBottom: '100px' }}>
       <Header />
       
-      <div style={{ paddingTop: '140px', paddingLeft: '24px', paddingRight: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ paddingTop: '115px', paddingLeft: 'clamp(14px, 4vw, 24px)', paddingRight: 'clamp(14px, 4vw, 24px)', maxWidth: '1200px', margin: '0 auto' }}>
         
         {/* Navegación de regreso */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '30px' }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '24px' }}>
           <Link 
             to="/" 
             style={{ 
@@ -25,10 +26,12 @@ const GalletasPage: React.FC = () => {
               color: 'var(--wine)', 
               textDecoration: 'none', 
               fontWeight: 600,
-              fontSize: '1rem',
+              fontSize: '0.95rem',
               background: 'rgba(123, 26, 16, 0.06)',
-              padding: '8px 18px',
-              borderRadius: '99px'
+              padding: '10px 18px',
+              minHeight: '44px',
+              borderRadius: '99px',
+              touchAction: 'manipulation'
             }}
           >
             <ArrowLeft size={18} />
@@ -37,23 +40,26 @@ const GalletasPage: React.FC = () => {
         </div>
 
         {/* Tabs de Secciones */}
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '40px', overflowX: 'auto', paddingBottom: '8px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '32px' }}>
           <Link 
             to="/tortas" 
             style={{ 
               display: 'inline-flex', 
               alignItems: 'center', 
-              gap: '8px', 
-              padding: '10px 24px', 
+              gap: '6px', 
+              padding: '10px 18px', 
+              minHeight: '44px',
+              fontSize: '0.94rem',
               borderRadius: '99px', 
               textDecoration: 'none', 
               fontWeight: 600,
+              touchAction: 'manipulation',
               background: '#fff',
               color: 'var(--wine)',
               border: '1px solid rgba(123, 26, 16, 0.15)'
             }}
           >
-            <Cake size={20} />
+            <CakeIcon size={18} />
             <span>Tortas</span>
           </Link>
 
@@ -62,17 +68,20 @@ const GalletasPage: React.FC = () => {
             style={{ 
               display: 'inline-flex', 
               alignItems: 'center', 
-              gap: '8px', 
-              padding: '10px 24px', 
+              gap: '6px', 
+              padding: '10px 18px', 
+              minHeight: '44px',
+              fontSize: '0.94rem',
               borderRadius: '99px', 
               textDecoration: 'none', 
               fontWeight: 600,
+              touchAction: 'manipulation',
               background: '#fff',
               color: 'var(--wine)',
               border: '1px solid rgba(123, 26, 16, 0.15)'
             }}
           >
-            <Dessert size={20} />
+            <Dessert size={18} />
             <span>Postres</span>
           </Link>
 
@@ -81,17 +90,20 @@ const GalletasPage: React.FC = () => {
             style={{ 
               display: 'inline-flex', 
               alignItems: 'center', 
-              gap: '8px', 
-              padding: '10px 24px', 
+              gap: '6px', 
+              padding: '10px 18px', 
+              minHeight: '44px',
+              fontSize: '0.94rem',
               borderRadius: '99px', 
               textDecoration: 'none', 
               fontWeight: 600,
+              touchAction: 'manipulation',
               background: 'var(--wine)',
               color: 'var(--blush)',
               boxShadow: '0 4px 12px rgba(123, 26, 16, 0.2)'
             }}
           >
-            <Cookie size={20} />
+            <Cookie size={18} />
             <span>Galletas</span>
           </Link>
         </div>

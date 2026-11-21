@@ -58,6 +58,8 @@
   border-radius: 50% !important;
   border: none !important;
   cursor: pointer !important;
+  touch-action: manipulation !important;
+  -webkit-tap-highlight-color: transparent !important;
   transition: transform 0.3s cubic-bezier(.2,.8,.2,1), box-shadow 0.3s ease !important;
   line-height: 0 !important;
 }

@@ -268,6 +268,28 @@ export const sendOrderEmailNotification = async (
     };
   }
 
+  const cleanUrl = config.scriptUrl.trim();
+  if (cleanUrl.includes('/edit')) {
+    return {
+      success: false,
+      message: 'La URL pegada termina en /edit (es el editor de Google). Debes ir a "Implementar" > "Nueva implementación" > "Aplicación web" y copiar la URL pública que termina en /exec.'
+    };
+  }
+
+  if (cleanUrl.includes('/dev')) {
+    return {
+      success: false,
+      message: 'La URL pegada termina en /dev (es versión de prueba). Debes ir a "Implementar" > "Nueva implementación" y copiar la URL pública que termina en /exec.'
+    };
+  }
+
+  if (!cleanUrl.startsWith('https://script.google.com/macros/s/') || !cleanUrl.endsWith('/exec')) {
+    return {
+      success: false,
+      message: 'La URL debe ser de Google Apps Script y terminar exactamente en /exec (ej: https://script.google.com/macros/s/AKfy.../exec).'
+    };
+  }
+
   // Rate Limiting para proteger el servicio y evitar abusos
   const rateLimit = checkRateLimit('email_notification', 10, 60000);
   if (!rateLimit.allowed) {

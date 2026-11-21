@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { MenuItem, Presentation } from '../data/menuData';
 import { useCartStore } from '../store/cartStore';
-import { ShoppingBag, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import OvenIcon from './OvenIcon';
 import toast from 'react-hot-toast';
 import './MenuItemCard.css';
 
@@ -207,7 +208,7 @@ const MenuItemCard: React.FC<MenuItemCardProps> = ({ item }) => {
             </>
           ) : (
             <>
-              <ShoppingBag size={20} />
+              <OvenIcon size={20} />
               <span>Agregar · {formatCOP(currentSelected.price)}</span>
             </>
           )}

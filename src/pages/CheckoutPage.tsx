@@ -1,17 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useCartStore } from '../store/cartStore';
 import { useOrderStore } from '../store/orderStore';
 import Header from '../components/Header';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Clock, AlertCircle } from 'lucide-react';
+import OvenIcon from '../components/OvenIcon';
 import toast from 'react-hot-toast';
 import { checkRateLimit } from '../utils/rateLimiter';
+import { saveLegalConsentToSupabase } from '../services/supabaseClient';
 import { 
   validateName, 
   validateEmail, 
   validatePhone, 
   validateAddress, 
-  validateBarrio 
+  validateBarrio,
+  sanitizeTextInput,
+  sanitizeMultilineInput,
+  isSuspiciousPayload
 } from '../utils/validators';
 import './CheckoutPage.css';
 
@@ -22,6 +27,10 @@ const CheckoutPage: React.FC = () => {
   const schedule = useOrderStore(state => state.schedule);
   const navigate = useNavigate();
 
+  // Protección anti-bot: campo trampa honeypot y tiempo de llenado
+  const [honeypot, setHoneypot] = useState('');
+  const formMountTime = useRef<number>(Date.now());
+
   // Estados de inputs del formulario
   const [formData, setFormData] = useState({
     nombre: '',
@@ -31,6 +40,7 @@ const CheckoutPage: React.FC = () => {
     barrio: '',
     direccion: '',
     detalles: '',
+    termsAccepted: false,
     privacyAccepted: false
   });
 
@@ -57,8 +67,10 @@ const CheckoutPage: React.FC = () => {
         return validateBarrio(String(value || ''), pickup).error || '';
       case 'direccion':
         return validateAddress(String(value || ''), pickup).error || '';
+      case 'termsAccepted':
+        return value ? '' : 'Debes aceptar los Términos y Condiciones.';
       case 'privacyAccepted':
-        return value ? '' : 'Debes aceptar los términos y el tratamiento de datos.';
+        return value ? '' : 'Debes autorizar el Tratamiento de Datos Personales.';
       default:
         return '';
     }
@@ -92,6 +104,7 @@ const CheckoutPage: React.FC = () => {
       telefono: validateField('telefono', formData.telefono, isPickup),
       barrio: validateField('barrio', formData.barrio, isPickup),
       direccion: validateField('direccion', formData.direccion, isPickup),
+      termsAccepted: validateField('termsAccepted', formData.termsAccepted, isPickup),
       privacyAccepted: validateField('privacyAccepted', formData.privacyAccepted, isPickup)
     };
 
@@ -102,6 +115,7 @@ const CheckoutPage: React.FC = () => {
       telefono: true,
       barrio: true,
       direccion: true,
+      termsAccepted: true,
       privacyAccepted: true
     });
 
@@ -113,31 +127,69 @@ const CheckoutPage: React.FC = () => {
     e.preventDefault();
     if (isSubmitting) return;
 
+    // 1. Detección de bots automatizados vía campo trampa Honeypot
+    if (honeypot.trim() !== '') {
+      // Bloqueo silencioso: si un bot llenó el campo oculto, simular salida sin crear pedido
+      setIsSubmitting(true);
+      setTimeout(() => {
+        navigate('/');
+      }, 400);
+      return;
+    }
+
+    // 2. Detección de bots de velocidad ultra-rápida (< 1.2 segundos desde la carga)
+    if (Date.now() - formMountTime.current < 1200) {
+      toast.error('Por favor tómate un momento para revisar tus datos con calma.');
+      return;
+    }
+
     if (!validateAll()) {
       toast.error('Por favor completa los datos obligatorios marcados en rojo.');
       return;
     }
 
-    // Rate limiting para evitar spam o saturación de pedidos (máx 3 pedidos cada 2 min)
+    // 3. Verificación de cargas maliciosas o inyecciones de script (Anti-XSS / SQLi)
+    const inputsToCheck = [
+      formData.nombre,
+      formData.correo,
+      formData.telefono,
+      formData.barrio,
+      formData.direccion,
+      formData.detalles
+    ];
+    if (inputsToCheck.some(val => isSuspiciousPayload(val))) {
+      toast.error('Se detectaron caracteres o secuencias de texto no permitidas por seguridad.');
+      return;
+    }
+
+    // 4. Rate limiting para evitar spam o saturación de pedidos (máx 3 pedidos cada 2 min)
     const rateLimit = checkRateLimit('create_order', 3, 120000);
     if (!rateLimit.allowed) {
       toast.error(`Por seguridad y para no saturar la cocina, por favor espera ${rateLimit.retryAfterSec} segundos antes de enviar otro pedido.`);
       return;
     }
 
+    // 5. Sanitización limpia de entradas
+    const cleanName = sanitizeTextInput(formData.nombre, 70);
+    const cleanEmail = sanitizeTextInput(formData.correo, 80);
+    const cleanPhone = sanitizeTextInput(formData.telefono, 20);
+    const cleanBarrio = sanitizeTextInput(formData.barrio, 80);
+    const cleanDireccion = sanitizeTextInput(formData.direccion, 120);
+    const cleanDetalles = sanitizeMultilineInput(formData.detalles, 300);
+
     setIsSubmitting(true);
     const fullAddress = isPickup 
       ? 'Recoge en Tienda (Sablée Pastelería)' 
-      : `${formData.direccion.trim()} (Barrio: ${formData.barrio.trim()})`;
+      : `${cleanDireccion} (Barrio: ${cleanBarrio})`;
 
     try {
       const orderId = createOrder({
         customer: {
-          name: formData.nombre.trim(),
-          email: formData.correo.trim(),
-          phone: formData.telefono.trim(),
+          name: cleanName,
+          email: cleanEmail,
+          phone: cleanPhone,
           address: fullAddress,
-          details: formData.detalles.trim(),
+          details: cleanDetalles,
           city: formData.ciudad,
         },
         items: items.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
@@ -145,7 +197,43 @@ const CheckoutPage: React.FC = () => {
         tax: 0,
         total,
         status: 'Pendiente por validación',
-        channel: 'Web / QR'
+        channel: 'Web / QR',
+        termsAccepted: true,
+        termsAcceptedAt: new Date().toISOString(),
+        privacyAccepted: true,
+        privacyAcceptedAt: new Date().toISOString(),
+        dataConsentAccepted: true,
+        dataConsentAt: new Date().toISOString()
+      });
+
+      // Guardar auditoría legal de consentimiento en Supabase
+      const nowIso = new Date().toISOString();
+      saveLegalConsentToSupabase({
+        consentType: 'terminos_y_condiciones',
+        accepted: true,
+        acceptedAt: nowIso,
+        customerName: cleanName,
+        customerPhone: cleanPhone,
+        customerEmail: cleanEmail,
+        orderId
+      });
+      saveLegalConsentToSupabase({
+        consentType: 'politica_privacidad',
+        accepted: true,
+        acceptedAt: nowIso,
+        customerName: cleanName,
+        customerPhone: cleanPhone,
+        customerEmail: cleanEmail,
+        orderId
+      });
+      saveLegalConsentToSupabase({
+        consentType: 'habeas_data',
+        accepted: true,
+        acceptedAt: nowIso,
+        customerName: cleanName,
+        customerPhone: cleanPhone,
+        customerEmail: cleanEmail,
+        orderId
       });
 
       // Guardar en el historial de pedidos de este dispositivo para seguimiento inmediato
@@ -201,7 +289,43 @@ const CheckoutPage: React.FC = () => {
       tax: 0,
       total,
       status: 'Pendiente por validación',
-      channel: 'WhatsApp'
+      channel: 'WhatsApp',
+      termsAccepted: true,
+      termsAcceptedAt: new Date().toISOString(),
+      privacyAccepted: true,
+      privacyAcceptedAt: new Date().toISOString(),
+      dataConsentAccepted: true,
+      dataConsentAt: new Date().toISOString()
+    });
+
+    // Guardar auditoría legal de consentimiento en Supabase
+    const nowIso = new Date().toISOString();
+    saveLegalConsentToSupabase({
+      consentType: 'terminos_y_condiciones',
+      accepted: true,
+      acceptedAt: nowIso,
+      customerName: formData.nombre.trim(),
+      customerPhone: formData.telefono.trim(),
+      customerEmail: formData.correo.trim(),
+      orderId
+    });
+    saveLegalConsentToSupabase({
+      consentType: 'politica_privacidad',
+      accepted: true,
+      acceptedAt: nowIso,
+      customerName: formData.nombre.trim(),
+      customerPhone: formData.telefono.trim(),
+      customerEmail: formData.correo.trim(),
+      orderId
+    });
+    saveLegalConsentToSupabase({
+      consentType: 'habeas_data',
+      accepted: true,
+      acceptedAt: nowIso,
+      customerName: formData.nombre.trim(),
+      customerPhone: formData.telefono.trim(),
+      customerEmail: formData.correo.trim(),
+      orderId
     });
 
     // Guardar en el historial de pedidos de este dispositivo para seguimiento inmediato
@@ -253,6 +377,18 @@ Ver en Panel: ${adminUrl}`;
         
         <div className="checkout-grid">
           <form className="checkout-form" onSubmit={handleSubmit} noValidate>
+            {/* Campo trampa Honeypot anti-spam (invisible para humanos, detecta bots automáticos) */}
+            <div style={{ display: 'none', position: 'absolute', left: '-9999px', opacity: 0 }} aria-hidden="true">
+              <input
+                type="text"
+                name="empresa_website_hp"
+                value={honeypot}
+                onChange={(e) => setHoneypot(e.target.value)}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             <section className="form-section">
               <h2 className="d">Datos de Contacto</h2>
               <div className="input-group">
@@ -265,7 +401,7 @@ Ver en Panel: ${adminUrl}`;
                   onChange={handleChange}
                   onBlur={() => handleBlur('nombre')}
                   className={touched.nombre && errors.nombre ? 'input-has-error' : ''}
-                  placeholder="Ej. Ana Pérez" 
+                  placeholder="Ej. Nombre y Apellido" 
                 />
                 {touched.nombre && errors.nombre && (
                   <span className="input-error-text">
@@ -286,7 +422,7 @@ Ver en Panel: ${adminUrl}`;
                     onChange={handleChange}
                     onBlur={() => handleBlur('correo')}
                     className={touched.correo && errors.correo ? 'input-has-error' : ''}
-                    placeholder="ana@email.com" 
+                    placeholder="ejemplo@mail.com" 
                   />
                   {touched.correo && errors.correo && (
                     <span className="input-error-text">
@@ -306,7 +442,7 @@ Ver en Panel: ${adminUrl}`;
                     onChange={handleChange}
                     onBlur={() => handleBlur('telefono')}
                     className={touched.telefono && errors.telefono ? 'input-has-error' : ''}
-                    placeholder="Ej. 312 345 6789" 
+                    placeholder="000 000 0000" 
                   />
                   {touched.telefono && errors.telefono && (
                     <span className="input-error-text">
@@ -391,7 +527,7 @@ Ver en Panel: ${adminUrl}`;
                       onChange={handleChange}
                       onBlur={() => handleBlur('barrio')}
                       className={touched.barrio && errors.barrio ? 'input-has-error' : ''}
-                      placeholder="Ej. Cabecera, Provenza, Cañaveral..." 
+                      placeholder="Ej. Barrio / Sector" 
                     />
                     {touched.barrio && errors.barrio && (
                       <span className="input-error-text">
@@ -414,7 +550,7 @@ Ver en Panel: ${adminUrl}`;
                     onChange={handleChange}
                     onBlur={() => handleBlur('direccion')}
                     className={touched.direccion && errors.direccion ? 'input-has-error' : ''}
-                    placeholder="Ej. Cra 35 # 48-12 / Casa / Manzana / Conjunto" 
+                    placeholder="Ej. Calle 00 # 00 - 00, Apto 000" 
                   />
                   {touched.direccion && errors.direccion && (
                     <span className="input-error-text">
@@ -437,32 +573,74 @@ Ver en Panel: ${adminUrl}`;
                   name="detalles" 
                   value={formData.detalles}
                   onChange={handleChange}
-                  placeholder="Torre, apto, indicaciones especiales para el domiciliario (opcional)" 
+                  placeholder="Ej. Apto 000, Torre 0, dejar en portería" 
                 />
               </div>
             </section>
 
-            <div style={{ marginBottom: '30px' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <input 
-                  type="checkbox" 
-                  id="privacy" 
-                  name="privacyAccepted"
-                  checked={formData.privacyAccepted}
-                  onChange={handleChange}
-                  onBlur={() => handleBlur('privacyAccepted')}
-                  style={{ marginTop: '5px', transform: 'scale(1.2)', cursor: 'pointer' }} 
-                />
-                <label htmlFor="privacy" style={{ fontSize: '0.9rem', color: 'var(--wine)', lineHeight: '1.4', cursor: 'pointer' }}>
-                  Acepto los <a href="/terms" target="_blank" style={{ textDecoration: 'underline', color: 'var(--wine)', fontWeight: 'bold' }}>Términos y Condiciones</a> y doy mi <a href="/privacy-policy" target="_blank" style={{ textDecoration: 'underline', color: 'var(--wine)', fontWeight: 'bold' }}>Autorización para el Tratamiento de Datos Personales</a>.
-                </label>
+            {/* Casillas de Verificación Separadas: Términos y Tratamiento de Datos */}
+            <div style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {/* Casilla 1: Términos y Condiciones */}
+              <div style={{
+                background: '#ffffff',
+                border: touched.termsAccepted && errors.termsAccepted ? '1.5px solid #dc2626' : '1px solid rgba(123, 26, 16, 0.12)',
+                borderRadius: '14px',
+                padding: '14px 16px',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <input 
+                    type="checkbox" 
+                    id="termsAccepted" 
+                    name="termsAccepted"
+                    checked={formData.termsAccepted}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('termsAccepted')}
+                    style={{ width: '20px', height: '20px', minWidth: '20px', marginTop: '2px', cursor: 'pointer', accentColor: 'var(--wine)', touchAction: 'manipulation' }} 
+                  />
+                  <label htmlFor="termsAccepted" style={{ fontSize: '0.9rem', color: 'var(--wine)', lineHeight: '1.45', cursor: 'pointer', userSelect: 'none', touchAction: 'manipulation' }}>
+                    He leído y acepto los <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--wine)', fontWeight: 700 }}>Términos y Condiciones</a> del servicio de compra y entrega en Sablée Pastelería.
+                  </label>
+                </div>
+                {touched.termsAccepted && errors.termsAccepted && (
+                  <span className="input-error-text" style={{ marginLeft: '32px', marginTop: '6px' }}>
+                    <AlertCircle size={14} />
+                    {errors.termsAccepted}
+                  </span>
+                )}
               </div>
-              {touched.privacyAccepted && errors.privacyAccepted && (
-                <span className="input-error-text" style={{ marginLeft: '26px', marginTop: '6px' }}>
-                  <AlertCircle size={14} />
-                  {errors.privacyAccepted}
-                </span>
-              )}
+
+              {/* Casilla 2: Tratamiento de Datos Personales (Habeas Data) */}
+              <div style={{
+                background: '#ffffff',
+                border: touched.privacyAccepted && errors.privacyAccepted ? '1.5px solid #dc2626' : '1px solid rgba(123, 26, 16, 0.12)',
+                borderRadius: '14px',
+                padding: '14px 16px',
+                transition: 'all 0.2s ease',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <input 
+                    type="checkbox" 
+                    id="privacyAccepted" 
+                    name="privacyAccepted"
+                    checked={formData.privacyAccepted}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('privacyAccepted')}
+                    style={{ width: '20px', height: '20px', minWidth: '20px', marginTop: '2px', cursor: 'pointer', accentColor: 'var(--wine)', touchAction: 'manipulation' }} 
+                  />
+                  <label htmlFor="privacyAccepted" style={{ fontSize: '0.9rem', color: 'var(--wine)', lineHeight: '1.45', cursor: 'pointer', userSelect: 'none', touchAction: 'manipulation' }}>
+                    Autorizo expresamente el <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'underline', color: 'var(--wine)', fontWeight: 700 }}>Tratamiento de mis Datos Personales</a> conforme a la Política de Privacidad y la Ley 1581 de 2012 (Habeas Data).
+                  </label>
+                </div>
+                {touched.privacyAccepted && errors.privacyAccepted && (
+                  <span className="input-error-text" style={{ marginLeft: '32px', marginTop: '6px' }}>
+                    <AlertCircle size={14} />
+                    {errors.privacyAccepted}
+                  </span>
+                )}
+              </div>
             </div>
 
             <button 
@@ -485,9 +663,9 @@ Ver en Panel: ${adminUrl}`;
                   color: 'var(--wine, #7B1A10)',
                   border: '2px solid var(--wine, #7B1A10)',
                   padding: '14px',
-                  borderRadius: '99px',
+                  borderRadius: '10px',
                   fontWeight: 600,
-                  fontSize: '1.05rem',
+                  fontSize: '1.02rem',
                   cursor: isSubmitting ? 'not-allowed' : 'pointer',
                   opacity: isSubmitting ? 0.7 : 1,
                   display: 'flex',
@@ -503,19 +681,57 @@ Ver en Panel: ${adminUrl}`;
           </form>
 
           <aside className="checkout-summary">
-            <h2 className="d">Resumen de Orden</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', borderBottom: '1.5px dashed rgba(123, 26, 16, 0.15)', paddingBottom: '12px' }}>
+              <div style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '10px',
+                background: 'var(--petal)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <OvenIcon size={20} color="var(--wine)" />
+              </div>
+              <div>
+                <h2 className="d" style={{ margin: 0, fontSize: '1.35rem', color: 'var(--wine)', border: 'none', padding: 0 }}>
+                  Resumen de Orden
+                </h2>
+                <span style={{ fontSize: '0.74rem', color: '#776', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 600 }}>
+                  Sablée Bucaramanga
+                </span>
+              </div>
+            </div>
+
             <ul className="summary-items">
               {items.map(item => (
-                <li key={item.id}>
-                  <span>{item.quantity}x {item.name}</span>
-                  <span>{formatCOP(item.price * item.quantity)}</span>
+                <li key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.94rem' }}>
+                  <div>
+                    <span style={{ fontWeight: 700, color: 'var(--wine)', marginRight: '6px' }}>{item.quantity}x</span>
+                    <span style={{ color: 'var(--wine2)', fontWeight: 500 }}>{item.name}</span>
+                  </div>
+                  <span style={{ fontWeight: 600, color: 'var(--wine)', whiteSpace: 'nowrap' }}>{formatCOP(item.price * item.quantity)}</span>
                 </li>
               ))}
             </ul>
+
             <div className="summary-totals">
-              <div className="tot-row main-total d" style={{ borderTop: 'none', paddingTop: 0 }}>
-                <span>Total a Pagar</span>
-                <span>{formatCOP(total)}</span>
+              <div style={{
+                background: 'var(--petal)',
+                padding: '14px 18px',
+                borderRadius: '12px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--wine)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Total a Pagar
+                </span>
+                <span className="d" style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--wine)' }}>
+                  {formatCOP(total)}
+                </span>
               </div>
             </div>
           </aside>

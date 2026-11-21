@@ -1,13 +1,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCartStore } from '../store/cartStore';
-import { Plus, ArrowRight, Cake, Dessert, Cookie } from 'lucide-react';
+import { Plus, ArrowRight, Dessert, Cookie } from 'lucide-react';
+import CakeIcon from './CakeIcon';
 import toast from 'react-hot-toast';
 import './ProductCard.css';
 
 export interface ProductProps {
   name: string;
-  desc: string;
+  desc?: string;
   price?: number;
   bg: string;
   color: string;
@@ -18,7 +19,7 @@ export interface ProductProps {
   img?: string;
 }
 
-const ProductCard: React.FC<ProductProps> = ({ name, desc, price = 10, bg, color, label, href = "#", icon, isCategory = false, img }) => {
+const ProductCard: React.FC<ProductProps> = ({ name, desc = '', price = 10, bg, color, label, href = "#", icon, isCategory = false, img }) => {
   const addItem = useCartStore(state => state.addItem);
   const navigate = useNavigate();
 
@@ -30,7 +31,7 @@ const ProductCard: React.FC<ProductProps> = ({ name, desc, price = 10, bg, color
 
   const renderCategoryIcon = () => {
     const lower = (name || '').toLowerCase();
-    if (lower.includes('torta')) return <Cake size={24} strokeWidth={2.4} color={iconStrokeColor} style={{ display: 'block', width: 24, height: 24 }} />;
+    if (lower.includes('torta')) return <CakeIcon size={24} strokeWidth={2.4} color={iconStrokeColor} style={{ display: 'block', width: 24, height: 24 }} />;
     if (lower.includes('galleta')) return <Cookie size={24} strokeWidth={2.4} color={iconStrokeColor} style={{ display: 'block', width: 24, height: 24 }} />;
     if (lower.includes('postre')) return <Dessert size={24} strokeWidth={2.4} color={iconStrokeColor} style={{ display: 'block', width: 24, height: 24 }} />;
     if (icon) return icon;

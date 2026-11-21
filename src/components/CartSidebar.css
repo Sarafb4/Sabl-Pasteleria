@@ -4,6 +4,7 @@
   left: 0;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(2px);
   opacity: 0;
@@ -24,17 +25,23 @@
   width: 100%;
   max-width: 400px;
   height: 100vh;
-  background: var(--blush, #FFF0F3); /* Using site variable fallback */
+  height: 100dvh;
+  background: var(--blush, #FFF0F3);
+  /* Using site variable fallback */
   color: var(--wine, #7B1A10);
   box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
-  transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1);
+  transition: right 0.4s cubic-bezier(0.77, 0, 0.175, 1), visibility 0.4s;
   z-index: 999;
   display: flex;
   flex-direction: column;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .cart-sidebar.open {
   right: 0;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .cart-header {
@@ -61,6 +68,10 @@
   justify-content: center;
   border-radius: 50%;
   transition: background 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .close-btn:hover {
@@ -150,12 +161,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: 8px;
+  min-width: 38px;
+  min-height: 38px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .quantity-controls span {
   font-weight: bold;
-  min-width: 20px;
+  min-width: 24px;
   text-align: center;
 }
 
@@ -170,6 +185,10 @@
   justify-content: center;
   border-radius: 50%;
   transition: background 0.2s;
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .remove-btn:hover {
@@ -177,7 +196,7 @@
 }
 
 .cart-footer {
-  padding: 24px;
+  padding: 20px 24px max(24px, calc(16px + env(safe-area-inset-bottom, 0px))) 24px;
   border-top: 2px solid rgba(123, 26, 16, 0.1);
   background: var(--blush, #FFF0F3);
 }
@@ -186,7 +205,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .summary-row {
@@ -214,11 +233,22 @@
   padding: 16px;
   font-size: 1.1rem;
   font-weight: bold;
-  border-radius: 8px;
+  border-radius: 12px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s, transform 0.15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 14px rgba(123, 26, 16, 0.25);
 }
 
 .checkout-btn:hover {
-  opacity: 0.9;
+  opacity: 0.95;
+}
+
+.checkout-btn:active {
+  transform: scale(0.98);
 }
