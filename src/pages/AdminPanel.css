@@ -1,0 +1,300 @@
+/* ============================================================
+   ADMIN PANEL - RESPONSIVE STYLES (MOBILE & TABLET & DESKTOP)
+   ============================================================ */
+
+/* Ocultar elementos de cliente en el header dentro de Admin */
+.admin-page-root nav #bag,
+.admin-page-root nav .header-track-btn {
+  display: none !important;
+}
+
+/* Header limpio para Admin */
+.admin-page-root nav {
+  position: sticky !important;
+  top: 0 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  border-bottom: 1px solid rgba(123, 26, 16, 0.1) !important;
+  padding: 12px 24px !important;
+  z-index: 90 !important;
+  box-shadow: 0 2px 12px rgba(123, 26, 16, 0.04) !important;
+}
+
+.admin-main-container {
+  padding-top: 24px;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-layout-row {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+}
+
+.admin-content-area {
+  flex: 1 1 0;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Oculto en desktop por defecto */
+.admin-mobile-bottom-nav {
+  display: none;
+}
+
+/* ============================================================
+   TABLET & MOBILE (<= 1024px)
+   ============================================================ */
+@media (max-width: 1024px) {
+  .admin-main-container {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+}
+
+/* ============================================================
+   MÓVIL (<= 768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  .admin-page-root nav {
+    padding: 10px 16px !important;
+  }
+
+  .admin-main-container {
+    padding-top: 14px !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* Ocultar la barra lateral izquierda en celular */
+  .admin-desktop-sidebar {
+    display: none !important;
+  }
+
+  .admin-layout-row {
+    display: block !important;
+    gap: 0 !important;
+  }
+
+  /* Barra de acciones superior en cuadrícula 2x2 */
+  .admin-top-actions {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    gap: 8px !important;
+    margin-top: 12px !important;
+  }
+
+  .admin-top-actions button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 9px 8px !important;
+    font-size: 0.82rem !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Tarjeta de Pedido en móvil */
+  .admin-order-card {
+    padding: 16px 14px !important;
+    border-radius: 18px !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+  }
+
+  .admin-order-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  /* Desglose de productos sin corte de precio */
+  .admin-order-item-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .admin-order-item-name {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    word-break: break-word !important;
+  }
+
+  .admin-order-item-price {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+  }
+
+  .admin-order-total-price {
+    flex-shrink: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Datos del cliente en móvil */
+  .admin-customer-info {
+    padding: 14px 12px !important;
+    border-radius: 14px !important;
+    word-break: break-word !important;
+  }
+
+  /* Cuaderno de Taller en móvil */
+  .admin-cuaderno-box {
+    padding: 14px 14px !important;
+    border-radius: 14px !important;
+  }
+
+  .admin-cuaderno-counters {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
+  }
+
+  /* Buscador y Filtros */
+  .admin-search-wrapper {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  .admin-search-input-box {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .admin-filter-scroll {
+    display: flex !important;
+    overflow-x: auto !important;
+    width: 100% !important;
+    padding-bottom: 4px !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 6px !important;
+  }
+
+  .admin-filter-scroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Pestañas de configuración (Horario, Alertas, etc.) */
+  .admin-settings-tabs {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .admin-settings-tabs button {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px 8px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* Modales responsive */
+  .admin-modal-overlay {
+    padding: 12px !important;
+    align-items: flex-end !important;
+  }
+
+  .admin-modal-card {
+    max-height: 88vh !important;
+    overflow-y: auto !important;
+    padding: 20px 16px !important;
+    border-radius: 20px 20px 0 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  /* ============================================================
+     BARRA INFERIOR NATIVA PARA MÓVIL (ADMIN BOTTOM NAV)
+     ============================================================ */
+  .admin-mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: calc(62px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1.5px solid rgba(123, 26, 16, 0.12);
+    box-shadow: 0 -4px 20px rgba(123, 26, 16, 0.08);
+    z-index: 999;
+    align-items: center;
+    justify-content: space-around;
+    box-sizing: border-box;
+  }
+
+  .admin-mobile-tab-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    background: transparent;
+    border: none;
+    color: #8A7572;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 6px 14px;
+    cursor: pointer;
+    position: relative;
+    border-radius: 12px;
+    transition: all 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    min-height: 48px;
+    flex: 1;
+  }
+
+  .admin-mobile-tab-btn.active {
+    color: var(--wine);
+    font-weight: 700;
+  }
+
+  .admin-mobile-tab-btn .tab-icon-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 26px;
+    border-radius: 8px;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+
+  .admin-mobile-tab-btn.active .tab-icon-wrap {
+    background: var(--wine);
+    color: #ffffff;
+  }
+
+  .admin-mobile-badge {
+    position: absolute;
+    top: 4px;
+    right: calc(50% - 18px);
+    background: var(--wine);
+    color: #ffffff;
+    font-size: 0.62rem;
+    font-weight: 800;
+    min-width: 15px;
+    height: 15px;
+    border-radius: 99px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+}

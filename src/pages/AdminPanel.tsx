@@ -45,6 +45,7 @@ import { checkRateLimit } from '../utils/rateLimiter';
 import { compressImage } from '../utils/imageCompressor';
 import { fetchCookieConsentsFromSupabase, fetchLegalConsentsFromSupabase } from '../services/supabaseClient';
 import toast from 'react-hot-toast';
+import './AdminPanel.css';
 
 const STATUS_COLORS: Record<OrderStatus, { bg: string; text: string }> = {
   'Pendiente por validación': { bg: '#fef3c7', text: '#92400e' },
@@ -863,9 +864,9 @@ const AdminPanel: React.FC = () => {
   // Si no está logueada, mostrar pantalla de inicio de sesión
   if (!isAuthenticated) {
     return (
-      <div style={{ background: 'var(--blush)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div className="admin-page-root" style={{ background: 'var(--blush)', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
         <Header />
-        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', paddingTop: '120px' }}>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px', paddingTop: '40px' }}>
           <div style={{
             background: '#fff',
             borderRadius: '32px',
@@ -989,7 +990,7 @@ const AdminPanel: React.FC = () => {
   }
 
   return (
-    <div style={{
+    <div className="admin-page-root" style={{
       background: '#FFFFFF',
       minHeight: '100vh',
       color: 'var(--wine2)',
@@ -999,10 +1000,10 @@ const AdminPanel: React.FC = () => {
     }}>
       <Header />
 
-      <div style={{ paddingTop: '130px', maxWidth: '1360px', margin: '0 auto', paddingLeft: '24px', paddingRight: '24px' }}>
+      <div className="admin-main-container" style={{ maxWidth: '1360px', margin: '0 auto' }}>
 
         {/* Barra superior con acciones unificadas y limpias */}
-        <div style={{
+        <div className="admin-top-bar" style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
@@ -1024,7 +1025,7 @@ const AdminPanel: React.FC = () => {
             </h1>
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div className="admin-top-actions" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
             {/* Teléfono de WhatsApp (Estilo Sablée) */}
             <button
               type="button"
@@ -1127,10 +1128,10 @@ const AdminPanel: React.FC = () => {
         </div>
 
         {/* Disposición con Barra Lateral Vertical Colapsable y Contenido */}
-        <div style={{ display: 'flex', gap: '28px', alignItems: 'flex-start', position: 'relative' }}>
+        <div className="admin-layout-row" style={{ display: 'flex', gap: '28px', alignItems: 'flex-start', position: 'relative' }}>
 
           {/* Columna de la Barra de Opciones Vertical (Anclada/Colapsable) */}
-          <div style={{ width: '58px', position: 'relative', flexShrink: 0, zIndex: 100 }}>
+          <div className="admin-desktop-sidebar" style={{ width: '58px', position: 'relative', flexShrink: 0, zIndex: 100 }}>
             <aside
               onMouseEnter={() => setIsNavExpanded(true)}
               onMouseLeave={() => setIsNavExpanded(false)}
@@ -1345,12 +1346,12 @@ const AdminPanel: React.FC = () => {
           </div>
 
           {/* Área de Contenido Principal (Unificada sobre fondo blanco) */}
-          <div style={{ flex: '1 1 0', minWidth: 0 }}>
+          <div className="admin-content-area" style={{ flex: '1 1 0', minWidth: 0 }}>
 
             {activeTab === 'pedidos' ? (
               <>
                 {/* Cuaderno de Taller / Resumen Humano Sablée (Limpio, Sin Estrella) */}
-                <div style={{
+                <div className="admin-cuaderno-box" style={{
                   background: '#FFFFFF',
                   borderRadius: '16px',
                   border: '1.5px solid rgba(123, 26, 16, 0.08)',
@@ -1393,7 +1394,7 @@ const AdminPanel: React.FC = () => {
                   </div>
 
                   {/* Contadores discretos a la derecha en tipografía nativa iOS */}
-                  <div style={{
+                  <div className="admin-cuaderno-counters" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '14px',
@@ -1418,7 +1419,7 @@ const AdminPanel: React.FC = () => {
                 </div>
 
                 {/* Buscador y Filtros Refinados */}
-                <div style={{
+                <div className="admin-search-wrapper" style={{
                   background: '#FFFFFF',
                   borderRadius: '16px',
                   padding: '12px 18px',
@@ -1432,7 +1433,7 @@ const AdminPanel: React.FC = () => {
                   boxShadow: '0 2px 8px rgba(123, 26, 16, 0.02)'
                 }}>
                   {/* Búsqueda */}
-                  <div style={{
+                  <div className="admin-search-input-box" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
@@ -1454,7 +1455,7 @@ const AdminPanel: React.FC = () => {
                   </div>
 
                   {/* Filtros por estado */}
-                  <div style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
+                  <div className="admin-filter-scroll" style={{ display: 'flex', gap: '6px', overflowX: 'auto', paddingBottom: '2px' }}>
                     {['todos', 'Pendiente por validación', 'Confirmado', 'En preparación', 'En camino', 'Entregado', 'Pago no validado'].map(st => {
                       const isSelected = filterStatus.toLowerCase() === st.toLowerCase();
                       return (
@@ -1551,6 +1552,7 @@ const AdminPanel: React.FC = () => {
                             return (
                               <div
                                 key={order.id}
+                                className="admin-order-card"
                                 style={{
                                   background: '#fff',
                                   borderRadius: '24px',
@@ -1713,10 +1715,10 @@ const AdminPanel: React.FC = () => {
                                 </div>
 
                                 {/* Cuerpo: Datos del Cliente + Productos */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                                <div className="admin-order-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
 
                                   {/* Datos del Cliente */}
-                                  <div style={{ background: '#faf7f8', padding: '16px 20px', borderRadius: '16px' }}>
+                                  <div className="admin-customer-info" style={{ background: '#faf7f8', padding: '16px 20px', borderRadius: '16px' }}>
                                     <h4 style={{ margin: '0 0 10px 0', color: 'var(--wine)', fontSize: '1.1rem', fontFamily: "'Jost', sans-serif", fontWeight: 600 }}>
                                       {order.customer.name}
                                     </h4>
@@ -1758,7 +1760,7 @@ const AdminPanel: React.FC = () => {
                                       )}
 
                                       {/* Registro de Consentimiento Legal & Habeas Data (Supabase) */}
-                                      <div style={{
+                                      <div className="admin-legal-box" style={{
                                         marginTop: '10px',
                                         background: 'rgba(123, 26, 16, 0.04)',
                                         border: '1px solid rgba(123, 26, 16, 0.12)',
@@ -1775,7 +1777,7 @@ const AdminPanel: React.FC = () => {
                                           <span>Consentimientos Legales Registrados en Supabase:</span>
                                         </div>
 
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px' }}>
+                                        <div className="admin-legal-chips" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '2px' }}>
                                           <span style={{ background: '#fff', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(123, 26, 16, 0.1)' }}>
                                             ✓ <strong>Términos & Condiciones:</strong> {order.termsAcceptedAt ? (() => { try { const d = new Date(order.termsAcceptedAt); return isNaN(d.getTime()) ? 'Aceptados' : d.toLocaleString('es-CO'); } catch { return 'Aceptados'; } })() : (order.dataConsentAt ? new Date(order.dataConsentAt).toLocaleString('es-CO') : 'Aceptados')}
                                           </span>
@@ -1802,16 +1804,16 @@ const AdminPanel: React.FC = () => {
 
                                     <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 16px 0', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                       {(Array.isArray(order.items) ? order.items : []).map((item, idx) => (
-                                        <li key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', borderBottom: '1px dashed #eee', paddingBottom: '4px' }}>
-                                          <span><strong>{Number(item.quantity) || 1}x</strong> {item.name || 'Producto'}</span>
-                                          <span style={{ fontWeight: 600 }}>{formatCOP((Number(item.price) || 0) * (Number(item.quantity) || 1))}</span>
+                                        <li key={idx} className="admin-order-item-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', borderBottom: '1px dashed #eee', paddingBottom: '4px' }}>
+                                          <span className="admin-order-item-name"><strong>{Number(item.quantity) || 1}x</strong> {item.name || 'Producto'}</span>
+                                          <span className="admin-order-item-price" style={{ fontWeight: 600 }}>{formatCOP((Number(item.price) || 0) * (Number(item.quantity) || 1))}</span>
                                         </li>
                                       ))}
                                     </ul>
 
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '2px solid #eee' }}>
+                                    <div className="admin-order-total-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '8px', borderTop: '2px solid #eee' }}>
                                       <span style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--wine2)' }}>Total a cobrar:</span>
-                                      <span style={{ fontFamily: "'Jost', sans-serif", fontWeight: 700, fontSize: '1.4rem', color: 'var(--wine)' }}>
+                                      <span className="admin-order-total-price" style={{ fontFamily: "'Jost', sans-serif", fontWeight: 700, fontSize: '1.4rem', color: 'var(--wine)' }}>
                                         {formatCOP(Number(order.total) || 0)}
                                       </span>
                                     </div>
@@ -2521,7 +2523,7 @@ const AdminPanel: React.FC = () => {
                 </div>
 
                 {/* Selector de Sección (Pestañas limpias y relajadas) */}
-                <div style={{
+                <div className="admin-settings-tabs" style={{
                   display: 'flex',
                   justifyContent: 'center',
                   gap: '12px',
@@ -4537,6 +4539,63 @@ const AdminPanel: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Barra de navegación inferior móvil para el Admin */}
+      <nav className="admin-mobile-bottom-nav" aria-label="Navegación móvil de administración">
+        <button
+          type="button"
+          onClick={() => setActiveTab('pedidos')}
+          className={`admin-mobile-tab-btn ${activeTab === 'pedidos' ? 'active' : ''}`}
+          aria-label="Pedidos"
+        >
+          <div className="tab-icon-wrap">
+            <Package size={18} />
+          </div>
+          <span>Pedidos</span>
+          {orders.length > 0 && (
+            <span className="admin-mobile-badge">{orders.length}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('carta')}
+          className={`admin-mobile-tab-btn ${activeTab === 'carta' ? 'active' : ''}`}
+          aria-label="Menú y Carta"
+        >
+          <div className="tab-icon-wrap">
+            <BookOpen size={18} />
+          </div>
+          <span>Carta</span>
+          {menuItems.length > 0 && (
+            <span className="admin-mobile-badge">{menuItems.length}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('pagos')}
+          className={`admin-mobile-tab-btn ${activeTab === 'pagos' ? 'active' : ''}`}
+          aria-label="Medios de Pago"
+        >
+          <div className="tab-icon-wrap">
+            <QrCode size={18} />
+          </div>
+          <span>Pagos</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('ajustes')}
+          className={`admin-mobile-tab-btn ${activeTab === 'ajustes' ? 'active' : ''}`}
+          aria-label="Configuración"
+        >
+          <div className="tab-icon-wrap">
+            <ShieldCheck size={18} />
+          </div>
+          <span>Ajustes</span>
+        </button>
+      </nav>
     </div>
   );
 };
