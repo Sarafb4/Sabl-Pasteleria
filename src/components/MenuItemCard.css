@@ -1,5 +1,5 @@
 /* ============================================================
-   GRILLA DE PRODUCTOS RESPONSIVE (ESCRITORIO Y MÓVIL)
+   GRILLA DE PRODUCTOS RESPONSIVE (OPCIÓN 1)
    ============================================================ */
 .menu-products-grid {
   display: grid;
@@ -8,12 +8,36 @@
 }
 
 /* ============================================================
-   TARJETA DE PRODUCTO (VISTA ESTÁNDAR ESCRITORIO)
+   BARRA FLOTANTE DE CATEGORÍAS (STICKY)
+   ============================================================ */
+.sticky-categories-bar {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 8px;
+  margin-bottom: 24px;
+  position: sticky;
+  top: calc(65px + env(safe-area-inset-top, 0px));
+  z-index: 35;
+  background: rgba(255, 240, 243, 0.94);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 8px 4px;
+  border-radius: 99px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sticky-categories-bar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ============================================================
+   TARJETA DE PRODUCTO
    ============================================================ */
 .menu-card {
   background: #ffffff;
   border-radius: 28px;
-  padding: 30px;
+  padding: 26px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -25,32 +49,32 @@
 }
 
 .menu-card:hover {
-  transform: translateY(-5px);
+  transform: translateY(-4px);
   box-shadow: 0 16px 36px rgba(123, 26, 16, 0.12);
 }
 
 .menu-card-badge {
   position: absolute;
-  top: 20px;
-  right: 20px;
+  top: 18px;
+  right: 18px;
   background: var(--petal, #FCE4E8);
   color: var(--wine, #7B1A10);
-  padding: 5px 14px;
+  padding: 4px 12px;
   border-radius: 99px;
-  font-size: 0.8rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   z-index: 2;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
 }
 
 .menu-card-image-wrap {
   width: 100%;
-  height: 220px;
-  border-radius: 20px;
+  height: 200px;
+  border-radius: 18px;
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   background: var(--petal, #FCE4E8);
   position: relative;
 }
@@ -64,7 +88,7 @@
 }
 
 .menu-card:hover .menu-card-image {
-  transform: scale(1.05);
+  transform: scale(1.04);
 }
 
 .carousel-arrow-btn {
@@ -109,93 +133,96 @@
 
 .menu-card-header h3 {
   font-family: 'Jost', sans-serif;
-  font-weight: 600;
-  font-size: 1.5rem;
+  font-weight: 700;
+  font-size: 1.4rem;
   color: var(--wine, #7B1A10);
-  margin: 0 0 8px 0;
+  margin: 0 0 6px 0;
   line-height: 1.25;
-  letter-spacing: -0.01em;
 }
 
 .menu-card-desc {
   color: #665;
-  font-size: 1.05rem;
-  line-height: 1.5;
-  margin: 0 0 24px 0;
+  font-size: 0.95rem;
+  line-height: 1.45;
+  margin: 0 0 16px 0;
 }
 
 .menu-presentations-title {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-weight: 600;
+  letter-spacing: 0.1em;
+  font-weight: 700;
   color: var(--wine2, #440E09);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
 }
 
-.menu-presentations-list {
+/* ============================================================
+   CHIPS HORIZONTALES PARA PRESENTACIONES (OPCIÓN 1)
+   ============================================================ */
+.menu-presentations-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.presentation-chip {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 24px;
-}
-
-.presentation-pill {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 18px;
-  border-radius: 16px;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 14px;
   border: 1.5px solid rgba(123, 26, 16, 0.15);
   background: #faf7f8;
   color: var(--wine2, #440E09);
   cursor: pointer;
   transition: all 0.2s ease;
-  text-align: left;
-  min-height: 48px;
+  min-height: 44px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  flex: 1;
+  min-width: 85px;
+  text-align: center;
 }
 
-.presentation-pill:hover {
+.presentation-chip:hover {
   border-color: var(--wine, #7B1A10);
   background: #fff;
 }
 
-.presentation-pill.selected {
+.presentation-chip.selected {
   background: var(--wine, #7B1A10);
   color: var(--blush, #FFF0F3);
   border-color: var(--wine, #7B1A10);
-  box-shadow: 0 4px 12px rgba(123, 26, 16, 0.25);
+  box-shadow: 0 4px 12px rgba(123, 26, 16, 0.22);
 }
 
-.pill-info {
-  display: flex;
-  flex-direction: column;
+.chip-label {
+  font-weight: 700;
+  font-size: 0.92rem;
+  line-height: 1.2;
 }
 
-.pill-label {
+.chip-price {
   font-weight: 600;
-  font-size: 1.05rem;
-}
-
-.pill-portions {
   font-size: 0.85rem;
-  opacity: 0.8;
+  opacity: 0.95;
   margin-top: 2px;
 }
 
-.pill-price {
-  font-weight: 700;
-  font-size: 1.1rem;
+.chip-portions {
+  font-size: 0.74rem;
+  opacity: 0.8;
+  margin-top: 1px;
 }
 
 .menu-card-action {
   margin-top: auto;
-  padding-top: 10px;
+  padding-top: 6px;
 }
 
 .btn-add-cart {
@@ -203,24 +230,24 @@
   background: var(--wine, #7B1A10);
   color: var(--blush, #FFF0F3);
   border: none;
-  padding: 16px 20px;
+  padding: 14px 18px;
   border-radius: 99px;
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1rem;
+  font-weight: 700;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   cursor: pointer;
-  min-height: 48px;
+  min-height: 46px;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   transition: transform 0.2s ease, background 0.2s ease;
-  box-shadow: 0 6px 18px rgba(123, 26, 16, 0.2);
+  box-shadow: 0 5px 15px rgba(123, 26, 16, 0.2);
 }
 
 .btn-add-cart:hover {
-  transform: scale(1.03);
+  transform: scale(1.02);
   background: var(--wine2, #440E09);
 }
 
@@ -228,199 +255,91 @@
   transform: scale(0.97);
 }
 
-/* Ocultar elementos de móvil en escritorio */
-.mobile-card-pricing,
-.mobile-action-btn {
-  display: none;
-}
-
 /* ============================================================
-   MODAL / BOTTOM SHEET (PARA ELEGIR TAMAÑO EN MÓVIL)
-   ============================================================ */
-.product-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  z-index: 1000;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  animation: fadeIn 0.25s ease-out;
-}
-
-.product-modal-card {
-  background: #ffffff;
-  width: 100%;
-  max-width: 500px;
-  max-height: 88vh;
-  border-radius: 28px 28px 0 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
-  position: relative;
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  padding-bottom: max(20px, env(safe-area-inset-bottom, 20px));
-}
-
-.product-modal-close {
-  position: absolute;
-  top: 14px;
-  right: 14px;
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--wine, #7B1A10);
-  border: none;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-}
-
-.product-modal-img-wrap {
-  width: 100%;
-  height: 200px;
-  position: relative;
-  background: var(--petal, #FCE4E8);
-}
-
-.product-modal-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.modal-badge {
-  top: 14px !important;
-  left: 14px !important;
-  right: auto !important;
-}
-
-.product-modal-body {
-  padding: 20px 20px 10px 20px;
-}
-
-.product-modal-title {
-  font-family: 'Jost', sans-serif;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--wine, #7B1A10);
-  margin: 0 0 6px 0;
-}
-
-.product-modal-desc {
-  font-size: 0.95rem;
-  color: #665;
-  line-height: 1.5;
-  margin: 0 0 16px 0;
-}
-
-.modal-add-btn {
-  margin-top: 10px;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
-
-/* ============================================================
-   ESTILOS RESPONSIVE PARA MÓVIL (OPCIÓN 3: CUADRÍCULA 2X2)
+   OPTIMIZACIÓN PARA CELULARES (MÓVIL)
    ============================================================ */
 @media (max-width: 600px) {
   .menu-products-grid {
-    grid-template-columns: repeat(2, 1fr) !important;
-    gap: 12px 10px !important;
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 
   .menu-card {
-    padding: 10px !important;
-    border-radius: 18px !important;
-    cursor: pointer;
-    box-shadow: 0 4px 14px rgba(123, 26, 16, 0.05) !important;
+    padding: 16px 14px !important;
+    border-radius: 22px !important;
   }
 
   .menu-card-image-wrap {
-    height: 120px !important;
+    height: 145px !important;
     border-radius: 14px !important;
-    margin-bottom: 8px !important;
+    margin-bottom: 12px !important;
   }
 
   .menu-card-badge {
-    top: 6px !important;
-    right: 6px !important;
-    font-size: 0.65rem !important;
-    padding: 2px 7px !important;
-    letter-spacing: 0.02em !important;
+    top: 12px !important;
+    right: 12px !important;
+    font-size: 0.72rem !important;
+    padding: 3px 10px !important;
   }
 
   .menu-card-header h3 {
-    font-size: 0.95rem !important;
-    font-weight: 700 !important;
-    line-height: 1.25 !important;
+    font-size: 1.25rem !important;
     margin-bottom: 4px !important;
+  }
+
+  .menu-card-desc {
+    font-size: 0.88rem !important;
+    margin-bottom: 12px !important;
+    line-height: 1.4 !important;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    min-height: 2.5em;
   }
 
-  /* Ocultar descripción y selector largo en la tarjeta móvil */
-  .menu-card-desc,
-  .desktop-presentations,
-  .desktop-action {
-    display: none !important;
+  .menu-presentations-title {
+    font-size: 0.74rem !important;
+    margin-bottom: 6px !important;
   }
 
-  /* Mostrar precio y botón compacto */
-  .mobile-card-pricing {
-    display: block !important;
-    margin-top: 2px;
-    margin-bottom: 8px;
+  /* Los chips se deslizan horizontalmente si no caben en una línea */
+  .menu-presentations-chips {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    gap: 6px !important;
+    margin-bottom: 14px !important;
+    padding-bottom: 4px !important;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .mobile-price-tag {
-    font-weight: 700;
-    font-size: 0.88rem;
-    color: var(--wine, #7B1A10);
+  .menu-presentations-chips::-webkit-scrollbar {
+    display: none;
   }
 
-  .mobile-action-btn {
-    display: block !important;
-    margin-top: auto;
+  .presentation-chip {
+    padding: 6px 10px !important;
+    border-radius: 12px !important;
+    flex: 1 0 auto !important;
+    min-width: 82px !important;
+    min-height: 40px !important;
   }
 
-  .btn-mobile-choose {
-    width: 100%;
-    background: var(--wine, #7B1A10);
-    color: var(--blush, #FFF0F3);
-    border: none;
-    padding: 7px 10px;
-    border-radius: 99px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    cursor: pointer;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    box-shadow: 0 3px 8px rgba(123, 26, 16, 0.18);
+  .chip-label {
+    font-size: 0.85rem !important;
   }
 
-  .btn-mobile-choose:active {
-    transform: scale(0.96);
+  .chip-price {
+    font-size: 0.78rem !important;
+  }
+
+  .chip-portions {
+    font-size: 0.68rem !important;
+  }
+
+  .btn-add-cart {
+    padding: 12px 16px !important;
+    font-size: 0.95rem !important;
+    min-height: 44px !important;
   }
 }

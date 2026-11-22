@@ -13,10 +13,10 @@ const PostresPage: React.FC = () => {
     <div style={{ background: 'var(--blush)', minHeight: '100vh', color: 'var(--wine)', paddingBottom: '100px' }}>
       <Header />
       
-      <div style={{ paddingTop: '115px', paddingLeft: 'clamp(14px, 4vw, 24px)', paddingRight: 'clamp(14px, 4vw, 24px)', maxWidth: '1200px', margin: '0 auto' }}>
+      <div style={{ paddingTop: 'calc(75px + env(safe-area-inset-top, 0px))', paddingLeft: 'clamp(14px, 4vw, 24px)', paddingRight: 'clamp(14px, 4vw, 24px)', maxWidth: '1200px', margin: '0 auto' }}>
         
-        {/* Navegación de regreso */}
-        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginBottom: '24px' }}>
+        {/* Navegación de regreso (espaciada perfectamente de la barra superior) */}
+        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', marginTop: '10px', marginBottom: '18px' }}>
           <Link 
             to="/" 
             style={{ 
@@ -26,40 +26,41 @@ const PostresPage: React.FC = () => {
               color: 'var(--wine)', 
               textDecoration: 'none', 
               fontWeight: 600,
-              fontSize: '0.95rem',
-              background: 'rgba(123, 26, 16, 0.06)',
-              padding: '10px 18px',
-              minHeight: '44px',
+              fontSize: '0.92rem',
+              background: 'rgba(123, 26, 16, 0.07)',
+              padding: '8px 16px',
+              minHeight: '40px',
               borderRadius: '99px',
               touchAction: 'manipulation'
             }}
           >
-            <ArrowLeft size={18} />
+            <ArrowLeft size={16} />
             <span>Volver al inicio</span>
           </Link>
         </div>
 
-        {/* Tabs de Secciones */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '32px' }}>
+        {/* Tabs de Secciones Flotante (Sticky) */}
+        <div className="sticky-categories-bar">
           <Link 
             to="/tortas" 
             style={{ 
               display: 'inline-flex', 
               alignItems: 'center', 
               gap: '6px', 
-              padding: '10px 18px', 
-              minHeight: '44px',
-              fontSize: '0.94rem',
+              padding: '8px 16px', 
+              minHeight: '40px',
+              fontSize: '0.92rem',
               borderRadius: '99px', 
               textDecoration: 'none', 
               fontWeight: 600,
               touchAction: 'manipulation',
               background: '#fff',
               color: 'var(--wine)',
-              border: '1px solid rgba(123, 26, 16, 0.15)'
+              border: '1px solid rgba(123, 26, 16, 0.15)',
+              whiteSpace: 'nowrap'
             }}
           >
-            <CakeIcon size={18} />
+            <CakeIcon size={16} />
             <span>Tortas</span>
           </Link>
 
@@ -69,19 +70,20 @@ const PostresPage: React.FC = () => {
               display: 'inline-flex', 
               alignItems: 'center', 
               gap: '6px', 
-              padding: '10px 18px', 
-              minHeight: '44px',
-              fontSize: '0.94rem',
+              padding: '8px 18px', 
+              minHeight: '40px',
+              fontSize: '0.92rem',
               borderRadius: '99px', 
               textDecoration: 'none', 
-              fontWeight: 600,
+              fontWeight: 700,
               touchAction: 'manipulation',
               background: 'var(--wine)',
               color: 'var(--blush)',
-              boxShadow: '0 4px 12px rgba(123, 26, 16, 0.2)'
+              boxShadow: '0 4px 12px rgba(123, 26, 16, 0.2)',
+              whiteSpace: 'nowrap'
             }}
           >
-            <Dessert size={18} />
+            <Dessert size={16} />
             <span>Postres</span>
           </Link>
 
@@ -91,26 +93,27 @@ const PostresPage: React.FC = () => {
               display: 'inline-flex', 
               alignItems: 'center', 
               gap: '6px', 
-              padding: '10px 18px', 
-              minHeight: '44px',
-              fontSize: '0.94rem',
+              padding: '8px 16px', 
+              minHeight: '40px',
+              fontSize: '0.92rem',
               borderRadius: '99px', 
               textDecoration: 'none', 
               fontWeight: 600,
               touchAction: 'manipulation',
               background: '#fff',
               color: 'var(--wine)',
-              border: '1px solid rgba(123, 26, 16, 0.15)'
+              border: '1px solid rgba(123, 26, 16, 0.15)',
+              whiteSpace: 'nowrap'
             }}
           >
-            <Cookie size={18} />
+            <Cookie size={16} />
             <span>Galletas</span>
           </Link>
         </div>
 
-        {/* Encabezado */}
-        <div style={{ marginBottom: '24px' }}>
-          <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(2.2rem, 5vw, 3.5rem)', margin: '0' }}>
+        {/* Encabezado limpio */}
+        <div style={{ marginBottom: '20px' }}>
+          <h1 className="d" style={{ color: 'var(--wine)', fontSize: 'clamp(2rem, 5vw, 3.2rem)', margin: '0' }}>
             Nuestros Postres
           </h1>
         </div>
@@ -127,4 +130,3 @@ const PostresPage: React.FC = () => {
 };
 
 export default PostresPage;
-
